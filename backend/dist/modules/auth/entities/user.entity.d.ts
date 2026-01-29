@@ -1,0 +1,29 @@
+import { Friendship } from '../../friendships/entities/friendship.entity';
+import { Team } from '../../teams/entities/team.entity';
+import { TeamMember } from '../../teams/entities/team-member.entity';
+import { MatchParticipant } from '../../matches/entities/match-participant.entity';
+import { MatchStat } from '../../matches/entities/match-stat.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
+import { ChatMessage } from '../../chat/entities/chat-message.entity';
+import { CommunityPost } from '../../community/entities/community-post.entity';
+import { Achievement } from '../../achievements/entities/achievement.entity';
+export declare class User {
+    id: number;
+    name: string;
+    email: string;
+    password_hash: string;
+    skill_level: number;
+    location: string;
+    sport_preferences: string[];
+    created_at: Date;
+    friendships: Friendship[];
+    friendRequests: Friendship[];
+    captainedTeams: Team[];
+    teamMemberships: TeamMember[];
+    matchParticipations: MatchParticipant[];
+    matchStats: MatchStat[];
+    notifications: Notification[];
+    sentMessages: ChatMessage[];
+    communityPosts: CommunityPost[];
+    achievements: Achievement[];
+}

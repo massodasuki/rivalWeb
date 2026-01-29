@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (with PostGIS for geography support)
+  postgres:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: rival-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-rival_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-rival_pass}
+      POSTGRES_DB: ${DB_DATABASE:-rival_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-rival_user} -d ${DB_DATABASE:-rival_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rival-network
+    env_file:
+      - backend/.env
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: rival-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rival-network
+    env_file:
+      - backend/.env
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rival-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rival_user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-rival_pass}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - rival-network
+    env_file:
+      - backend/.env
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rival-backend
+    restart: unless-stopped
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-rival_user}
+      DB_PASSWORD: ${DB_PASSWORD:-rival_pass}
+      DB_DATABASE: ${DB_DATABASE:-rival_db}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-here}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      
+      # App
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-production}
+      
+      # CORS
+      CORS_ORIGIN: http://localhost:3000
+      
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-rival_user}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-rival_pass}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rival_user}:${RABBITMQ_PASS:-rival_pass}@rabbitmq:5672
+      
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'node.*dist/main' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - rival-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rival-frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - rival-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+networks:
+  rival-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
