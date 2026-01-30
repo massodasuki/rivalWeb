@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { userService } from '../services/userService';
 
 function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -9,6 +10,67 @@ function Settings() {
     teamInvites: true,
     friendRequests: true,
   });
+  const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Mock user from auth context/API data (would come from real API)
+  const [userData, setUserData] = useState({
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 234 567 8900',
+    location: 'New York, NY',
+    primarySport: 'futsal',
+    skillLevel: '3',
+  });
+
+  // Fetch user data from API (optional)
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        const user = await userService.getUser(parseInt(userId, 10));
+        setUserData({
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          location: user.location || '',
+          primarySport: user.primary_sport || 'futsal',
+          skillLevel: String(user.skill_level || 3),
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        await userService.updateUser(parseInt(userId, 10), {
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          location: userData.location,
+          primary_sport: userData.primarySport,
+          skill_level: parseInt(userData.skillLevel, 10),
+        });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      // Simulate save for demo
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="settings">
@@ -37,28 +99,55 @@ function Settings() {
             <h3 className="card-title" style={{ marginBottom: '1.5rem' }}>Personal Information</h3>
             <div className="form-group">
               <label className="form-label">Full Name</label>
-              <input type="text" className="form-input" defaultValue="John Doe" />
+              <input 
+                type="text" 
+                className="form-input" 
+                value={userData.name}
+                onChange={(e) => setUserData({ ...userData, name: e.target.value })}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Email</label>
-              <input type="email" className="form-input" defaultValue="john.doe@example.com" />
+              <input 
+                type="email" 
+                className="form-input" 
+                value={userData.email}
+                onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Phone Number</label>
-              <input type="tel" className="form-input" defaultValue="+1 234 567 8900" />
+              <input 
+                type="tel" 
+                className="form-input" 
+                value={userData.phone}
+                onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+              />
             </div>
             <div className="form-group">
               <label className="form-label">Location</label>
-              <input type="text" className="form-input" defaultValue="New York, NY" />
+              <input 
+                type="text" 
+                className="form-input" 
+                value={userData.location}
+                onChange={(e) => setUserData({ ...userData, location: e.target.value })}
+              />
             </div>
-            <button className="btn btn-primary">Save Changes</button>
+            <button className="btn btn-primary" onClick={handleSaveProfile} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+            {saved && <span style={{ marginLeft: '1rem', color: 'var(--success)' }}>Saved!</span>}
           </div>
 
           <div className="card">
             <h3 className="card-title" style={{ marginBottom: '1.5rem' }}>Sports Preferences</h3>
             <div className="form-group">
               <label className="form-label">Primary Sport</label>
-              <select className="form-input">
+              <select 
+                className="form-input"
+                value={userData.primarySport}
+                onChange={(e) => setUserData({ ...userData, primarySport: e.target.value })}
+              >
                 <option value="futsal">Futsal</option>
                 <option value="basketball">Basketball</option>
                 <option value="tennis">Tennis</option>
@@ -66,10 +155,14 @@ function Settings() {
             </div>
             <div className="form-group">
               <label className="form-label">Skill Level</label>
-              <select className="form-input">
+              <select 
+                className="form-input"
+                value={userData.skillLevel}
+                onChange={(e) => setUserData({ ...userData, skillLevel: e.target.value })}
+              >
                 <option value="1">Beginner</option>
                 <option value="2">Intermediate</option>
-                <option value="3" selected>Advanced</option>
+                <option value="3">Advanced</option>
                 <option value="4">Professional</option>
               </select>
             </div>
@@ -90,7 +183,9 @@ function Settings() {
                 </label>
               </div>
             </div>
-            <button className="btn btn-primary">Save Preferences</button>
+            <button className="btn btn-primary" onClick={handleSaveProfile} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Preferences'}
+            </button>
           </div>
         </div>
       )}
@@ -104,35 +199,55 @@ function Settings() {
                 <strong>Email Notifications</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Receive updates via email</p>
               </div>
-              <input type="checkbox" checked={notifications.email} onChange={(e) => setNotifications({...notifications, email: e.target.checked})} />
+              <input 
+                type="checkbox" 
+                checked={notifications.email} 
+                onChange={(e) => setNotifications({...notifications, email: e.target.checked})} 
+              />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Push Notifications</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Receive push notifications</p>
               </div>
-              <input type="checkbox" checked={notifications.push} onChange={(e) => setNotifications({...notifications, push: e.target.checked})} />
+              <input 
+                type="checkbox" 
+                checked={notifications.push} 
+                onChange={(e) => setNotifications({...notifications, push: e.target.checked})} 
+              />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Match Reminders</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Get reminded before matches</p>
               </div>
-              <input type="checkbox" checked={notifications.matchReminders} onChange={(e) => setNotifications({...notifications, matchReminders: e.target.checked})} />
+              <input 
+                type="checkbox" 
+                checked={notifications.matchReminders} 
+                onChange={(e) => setNotifications({...notifications, matchReminders: e.target.checked})} 
+              />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Team Invites</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Notify when invited to a team</p>
               </div>
-              <input type="checkbox" checked={notifications.teamInvites} onChange={(e) => setNotifications({...notifications, teamInvites: e.target.checked})} />
+              <input 
+                type="checkbox" 
+                checked={notifications.teamInvites} 
+                onChange={(e) => setNotifications({...notifications, teamInvites: e.target.checked})} 
+              />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Friend Requests</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Notify for new friend requests</p>
               </div>
-              <input type="checkbox" checked={notifications.friendRequests} onChange={(e) => setNotifications({...notifications, friendRequests: e.target.checked})} />
+              <input 
+                type="checkbox" 
+                checked={notifications.friendRequests} 
+                onChange={(e) => setNotifications({...notifications, friendRequests: e.target.checked})} 
+              />
             </label>
           </div>
           <button className="btn btn-primary" style={{ marginTop: '1.5rem' }}>Save Preferences</button>

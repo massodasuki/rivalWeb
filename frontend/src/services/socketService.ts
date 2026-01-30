@@ -3,7 +3,15 @@ import { io, Socket } from 'socket.io-client';
 // Socket instance singleton
 let socket: Socket | null = null;
 
-const BACKEND_URL = 'http://localhost:3000';
+// Use environment variable or fallback to default (supports Docker and local dev)
+const getBackendUrl = () => {
+  // Check for environment variable (set in .env or docker-compose)
+  if (import.meta.env.VITE_BACKEND_URL) {
+    return import.meta.env.VITE_BACKEND_URL;
+  }
+  // Default to localhost:3001 for local development
+  return 'http://localhost:3001';
+};
 
 /**
  * Get or create the socket connection
@@ -12,7 +20,8 @@ const BACKEND_URL = 'http://localhost:3000';
  */
 export const getSocket = (token?: string): Socket => {
   if (!socket) {
-    socket = io(`${BACKEND_URL}/socket.io`, {
+    const backendUrl = getBackendUrl();
+    socket = io(`${backendUrl}/socket.io`, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

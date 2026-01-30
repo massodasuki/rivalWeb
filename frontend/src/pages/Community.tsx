@@ -1,21 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { communityService, CommunityPost } from '../services/communityService';
 
 function Community() {
   const [activeTab, setActiveTab] = useState('forum');
   const [newPost, setNewPost] = useState('');
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const forumPosts = [
-    { id: 1, author: 'John Doe', title: 'Best futsal courts in the city?', content: 'Looking for recommendations for futsal courts with good lighting and parking.', replies: 12, time: '2 hours ago' },
-    { id: 2, author: 'Sarah K.', title: 'Basketball league starting next month', content: 'Anyone interested in joining a recreational basketball league?', replies: 8, time: '5 hours ago' },
-    { id: 3, author: 'Mike J.', title: 'Tips for improving stamina', content: 'What are your go-to exercises for building endurance?', replies: 15, time: '1 day ago' },
-  ];
-
+  // Mock data for chat rooms and events (these would come from separate endpoints)
   const chatRooms = [
     { id: 1, name: 'Futsal Players', members: 156, active: 23, lastMessage: 'Anyone up for a match tonight?' },
     { id: 2, name: 'Basketball League', members: 89, active: 12, lastMessage: 'Game time confirmed for Saturday' },
     { id: 3, name: 'Tennis Enthusiasts', members: 64, active: 8, lastMessage: 'Looking for a tennis partner' },
     { id: 4, name: 'Weekend Warriors', members: 234, active: 45, lastMessage: 'Who\'s hosting this weekend?' },
   ];
+
+  // Fetch posts from API
+  const fetchPosts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await communityService.getPosts();
+      setPosts(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setError('Failed to load posts. Using mock data.');
+      // Fallback to mock data on error
+      setPosts([
+        { id: 1, user_id: 1, title: 'Best futsal courts in the city?', content: 'Looking for recommendations for futsal courts with good lighting and parking.', author: 'John Doe', replies: 12, time: '2 hours ago' },
+        { id: 2, user_id: 2, title: 'Basketball league starting next month', content: 'Anyone interested in joining a recreational basketball league?', author: 'Sarah K.', replies: 8, time: '5 hours ago' },
+        { id: 3, user_id: 3, title: 'Tips for improving stamina', content: 'What are your go-to exercises for building endurance?', author: 'Mike J.', replies: 15, time: '1 day ago' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'forum') {
+      fetchPosts();
+    }
+  }, [activeTab, fetchPosts]);
+
+  const handleCreatePost = async () => {
+    if (!newPost.trim()) return;
+
+    try {
+      const userId = localStorage.getItem('userId');
+      await communityService.createPost({
+        user_id: userId ? parseInt(userId, 10) : 1,
+        content: newPost,
+      });
+      setNewPost('');
+      fetchPosts();
+    } catch (err) {
+      console.error('Error creating post:', err);
+      // For demo, add mock post
+      const mockPost: CommunityPost = {
+        id: Date.now(),
+        user_id: 1,
+        content: newPost,
+        author: 'You',
+        replies: 0,
+        time: 'Just now',
+      };
+      setPosts([mockPost, ...posts]);
+      setNewPost('');
+    }
+  };
 
   return (
     <div className="community">
@@ -51,27 +104,33 @@ function Community() {
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button className="btn btn-outline">Cancel</button>
-              <button className="btn btn-primary">Post</button>
+              <button className="btn btn-outline" onClick={() => setNewPost('')}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleCreatePost}>Post</button>
             </div>
           </div>
           <div className="card">
-            {forumPosts.map((post) => (
-              <div key={post.id} className="match-card" style={{ display: 'block' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <div>
-                    <strong>{post.author}</strong>
-                    <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>{post.time}</span>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>Loading posts...</div>
+            ) : error ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--warning)' }}>{error}</div>
+            ) : (
+              posts.map((post) => (
+                <div key={post.id} className="match-card" style={{ display: 'block' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div>
+                      <strong>{post.author || 'Unknown'}</strong>
+                      <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>{post.time || 'Recently'}</span>
+                    </div>
+                  </div>
+                  {post.title && <h4 style={{ marginBottom: '0.5rem' }}>{post.title}</h4>}
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{post.content}</p>
+                  <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                    <span>💬 {post.replies || 0} replies</span>
+                    <button className="btn btn-outline btn-sm">Reply</button>
                   </div>
                 </div>
-                <h4 style={{ marginBottom: '0.5rem' }}>{post.title}</h4>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{post.content}</p>
-                <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                  <span>💬 {post.replies} replies</span>
-                  <button className="btn btn-outline btn-sm">Reply</button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}

@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { teamService, Team } from '../services/teamService';
 
 function Teams() {
   const [activeTab, setActiveTab] = useState('my-teams');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const myTeams = [
-    { id: 1, name: 'Weekend Warriors', sport: 'Futsal', members: 8, captain: 'You', wins: 12, losses: 3 },
-    { id: 2, name: 'City Strikers', sport: 'Basketball', members: 5, captain: 'Mike J.', wins: 8, losses: 5 },
-    { id: 3, name: 'Tennis Pros', sport: 'Tennis', members: 4, captain: 'Sarah K.', wins: 15, losses: 2 },
-  ];
-
+  // Mock data for invites and search results
   const pendingInvites = [
     { id: 1, team: 'Elite FC', sport: 'Futsal', from: 'John Doe', time: '2 hours ago' },
     { id: 2, team: 'Quick Players', sport: 'Basketball', from: 'Jane Smith', time: '1 day ago' },
@@ -19,6 +18,43 @@ function Teams() {
     { id: 1, name: 'Pro Team Alpha', sport: 'Futsal', members: 10, rating: 4.5 },
     { id: 2, name: 'Amateur United', sport: 'Basketball', members: 6, rating: 3.8 },
   ];
+
+  // Fetch teams from API
+  const fetchTeams = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await teamService.getTeams();
+      setTeams(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching teams:', err);
+      setError('Failed to load teams. Using mock data.');
+      // Fallback to mock data
+      setTeams([
+        { id: 1, name: 'Weekend Warriors', sport: 'Futsal', members: 8, captain: 'You', wins: 12, losses: 3 },
+        { id: 2, name: 'City Strikers', sport: 'Basketball', members: 5, captain: 'Mike J.', wins: 8, losses: 5 },
+        { id: 3, name: 'Tennis Pros', sport: 'Tennis', members: 4, captain: 'Sarah K.', wins: 15, losses: 2 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'my-teams') {
+      fetchTeams();
+    }
+  }, [activeTab, fetchTeams]);
+
+  const myTeams = teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+    sport: team.sport,
+    members: team.members || 0,
+    captain: team.captain || 'Unknown',
+    wins: team.wins || 0,
+    losses: team.losses || 0,
+  }));
 
   return (
     <div className="teams">
@@ -44,41 +80,58 @@ function Teams() {
       </div>
 
       {activeTab === 'my-teams' && (
-        <div className="grid grid-2">
-          {myTeams.map((team) => (
-            <div key={team.id} className="card">
-              <div className="card-header">
-                <div>
-                  <h3 className="card-title">{team.name}</h3>
-                  <span className="badge badge-info">{team.sport}</span>
-                </div>
-                <button className="btn btn-outline">Manage</button>
-              </div>
-              <div className="grid grid-4" style={{ marginTop: '1rem' }}>
-                <div className="stat-card">
-                  <div className="stat-value">{team.members}</div>
-                  <div className="stat-label">Members</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value">{team.wins}</div>
-                  <div className="stat-label">Wins</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value">{team.losses}</div>
-                  <div className="stat-label">Losses</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-value">{team.captain}</div>
-                  <div className="stat-label">Captain</div>
-                </div>
-              </div>
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                <button className="btn btn-primary" style={{ flex: 1 }}>View Roster</button>
-                <button className="btn btn-secondary" style={{ flex: 1 }}>Invite Players</button>
-              </div>
+        <>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading teams...</div>
+          ) : error ? (
+            <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--warning)' }}>
+              {error}
             </div>
-          ))}
-        </div>
+          ) : myTeams.length > 0 ? (
+            <div className="grid grid-2">
+              {myTeams.map((team) => (
+                <div key={team.id} className="card">
+                  <div className="card-header">
+                    <div>
+                      <h3 className="card-title">{team.name}</h3>
+                      <span className="badge badge-info">{team.sport}</span>
+                    </div>
+                    <button className="btn btn-outline">Manage</button>
+                  </div>
+                  <div className="grid grid-4" style={{ marginTop: '1rem' }}>
+                    <div className="stat-card">
+                      <div className="stat-value">{team.members}</div>
+                      <div className="stat-label">Members</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-value">{team.wins}</div>
+                      <div className="stat-label">Wins</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-value">{team.losses}</div>
+                      <div className="stat-label">Losses</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-value">{team.captain}</div>
+                      <div className="stat-label">Captain</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn btn-primary" style={{ flex: 1 }}>View Roster</button>
+                    <button className="btn btn-secondary" style={{ flex: 1 }}>Invite Players</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+              <p style={{ color: 'var(--text-secondary)' }}>You haven't joined any teams yet</p>
+              <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => setActiveTab('discover')}>
+                Discover Teams
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {activeTab === 'invites' && (

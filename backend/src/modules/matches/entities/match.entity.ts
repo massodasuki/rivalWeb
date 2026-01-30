@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Team } from '../../teams/entities/team.entity';
 
 @Entity('matches')
@@ -26,6 +26,9 @@ export class Match {
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
   @ManyToOne(() => Team, { nullable: true })
   @JoinColumn({ name: 'home_team_id' })

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -23,6 +23,18 @@ export class User {
   @Column({ type: 'text', array: true, nullable: true, name: 'sport_preferences' })
   sport_preferences: string[];
 
+  @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true, name: 'primary_sport' })
+  primary_sport: string;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 }

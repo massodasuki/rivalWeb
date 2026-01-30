@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { TeamMember } from './team-member.entity';
 
@@ -18,6 +18,9 @@ export class Team {
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'captain_id' })

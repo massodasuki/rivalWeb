@@ -16,6 +16,11 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Get(':id/stats')
+  async getStats(@Param('id') id: number) {
+    return this.usersService.getStats(id);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: number, @Body() updateData: Partial<User>): Promise<User> {
     return this.usersService.update(id, updateData);

@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { userService, User } from '../services/userService';
 
 function Stats() {
   const [activeTab, setActiveTab] = useState('personal');
   const [sport, setSport] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
+  // Mock data for leaderboard and achievements (would need separate endpoints)
   const personalStats = {
     overall: { matches: 24, wins: 18, losses: 6, goals: 42, assists: 15, rating: 4.2 },
     futsal: { matches: 15, wins: 12, losses: 3, goals: 28, assists: 8, rating: 4.5 },
@@ -32,6 +36,22 @@ function Stats() {
 
   const currentStats = sport === 'all' ? personalStats.overall : personalStats[sport as keyof typeof personalStats];
 
+  // Fetch user data from API (optional - would require auth)
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        const userData = await userService.getUser(parseInt(userId, 10));
+        setUser(userData);
+      }
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="stats">
       <header className="header">
@@ -53,7 +73,12 @@ function Stats() {
       {activeTab === 'personal' && (
         <div>
           <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <select className="form-input" style={{ width: '200px' }} value={sport} onChange={(e) => setSport(e.target.value)}>
+            <select 
+              className="form-input" 
+              style={{ width: '200px' }} 
+              value={sport} 
+              onChange={(e) => setSport(e.target.value)}
+            >
               <option value="all">All Sports</option>
               <option value="futsal">Futsal</option>
               <option value="basketball">Basketball</option>
