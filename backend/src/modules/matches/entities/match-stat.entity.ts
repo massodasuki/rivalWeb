@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { Match } from './match.entity';
 import { User } from '../../auth/entities/user.entity';
 
 @Entity('match_stats')
@@ -22,9 +23,9 @@ export class MatchStat {
   @Column({ nullable: true })
   rating: number;
 
-  @ManyToOne('Match')
+  @ManyToOne(() => Match, match => match.stats)
   @JoinColumn({ name: 'match_id' })
-  match: any;
+  match: Match;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

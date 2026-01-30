@@ -1,6 +1,6 @@
 import { get, post, patch, del } from './api';
 
-// Types for community posts
+// Types for community posts (matching backend entity)
 export interface CommunityPost {
   id: number;
   user_id: number;
@@ -9,9 +9,13 @@ export interface CommunityPost {
   type?: string;
   created_at?: string;
   updated_at?: string;
+  // Relations (populated by backend)
+  author?: {
+    id: number;
+    name: string;
+    avatar?: string;
+  };
   // Additional fields for UI
-  author?: string;
-  author_avatar?: string;
   replies?: number;
   time?: string;
   likes?: number;

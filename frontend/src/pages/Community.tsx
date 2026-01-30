@@ -28,9 +28,33 @@ function Community() {
       setError('Failed to load posts. Using mock data.');
       // Fallback to mock data on error
       setPosts([
-        { id: 1, user_id: 1, title: 'Best futsal courts in the city?', content: 'Looking for recommendations for futsal courts with good lighting and parking.', author: 'John Doe', replies: 12, time: '2 hours ago' },
-        { id: 2, user_id: 2, title: 'Basketball league starting next month', content: 'Anyone interested in joining a recreational basketball league?', author: 'Sarah K.', replies: 8, time: '5 hours ago' },
-        { id: 3, user_id: 3, title: 'Tips for improving stamina', content: 'What are your go-to exercises for building endurance?', author: 'Mike J.', replies: 15, time: '1 day ago' },
+        { 
+          id: 1, 
+          user_id: 1, 
+          title: 'Best futsal courts in the city?', 
+          content: 'Looking for recommendations for futsal courts with good lighting and parking.', 
+          author: { id: 1, name: 'John Doe' }, 
+          replies: 12, 
+          time: '2 hours ago' 
+        },
+        { 
+          id: 2, 
+          user_id: 2, 
+          title: 'Basketball league starting next month', 
+          content: 'Anyone interested in joining a recreational basketball league?', 
+          author: { id: 2, name: 'Sarah K.' }, 
+          replies: 8, 
+          time: '5 hours ago' 
+        },
+        { 
+          id: 3, 
+          user_id: 3, 
+          title: 'Tips for improving stamina', 
+          content: 'What are your go-to exercises for building endurance?', 
+          author: { id: 3, name: 'Mike J.' }, 
+          replies: 15, 
+          time: '1 day ago' 
+        },
       ]);
     } finally {
       setLoading(false);
@@ -61,7 +85,7 @@ function Community() {
         id: Date.now(),
         user_id: 1,
         content: newPost,
-        author: 'You',
+        author: { id: 1, name: 'You' },
         replies: 0,
         time: 'Just now',
       };
@@ -118,7 +142,7 @@ function Community() {
                 <div key={post.id} className="match-card" style={{ display: 'block' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                     <div>
-                      <strong>{post.author || 'Unknown'}</strong>
+                      <strong>{post.author?.name || 'Unknown'}</strong>
                       <span style={{ color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>{post.time || 'Recently'}</span>
                     </div>
                   </div>

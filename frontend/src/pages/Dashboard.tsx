@@ -88,6 +88,52 @@ function Dashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Handle button clicks
+  const handleCreateMatch = async () => {
+    try {
+      console.log('Create Match button clicked - calling backend...');
+      // Example: Create a new match
+      const newMatch = await matchService.createMatch({
+        sport: 'Futsal',
+        scheduled_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+      });
+      console.log('✅ Match created successfully:', newMatch);
+      // Refresh data after creating match
+      fetchDashboardData();
+      alert('Match created successfully!');
+    } catch (err) {
+      console.error('❌ Error creating match:', err);
+      alert('Failed to create match. Please check the console for details.');
+    }
+  };
+
+  const handleJoinMatch = async (matchId: number) => {
+    try {
+      console.log('Join Match button clicked for match:', matchId);
+      // Example: Add participant to match
+      await matchService.addParticipant(matchId, {
+        user_id: 1, // Would come from auth context
+        role: 'player',
+      });
+      console.log('Joined match successfully');
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error joining match:', err);
+    }
+  };
+
+  const handleFindRival = () => {
+    console.log('Find Rival button clicked');
+    // Navigate to matchmaking page or open search modal
+    window.location.href = '/matchmaking';
+  };
+
+  const handleCreateTeam = () => {
+    console.log('Create Team button clicked');
+    // Navigate to teams page or open create team modal
+    window.location.href = '/teams';
+  };
+
   // Transform matches for display
   const suggestedMatches = matches.slice(0, 4).map((match) => ({
     id: match.id,
@@ -127,14 +173,14 @@ function Dashboard() {
           <p className="header-subtitle">Welcome back, {mockUser.name}!</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary">+ Create Match</button>
+          <button className="btn btn-primary" onClick={handleCreateMatch}>+ Create Match</button>
         </div>
       </header>
 
       {/* Quick Actions */}
       <div className="card quick-actions">
         <div className="quick-action-buttons">
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleCreateMatch}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
@@ -142,7 +188,7 @@ function Dashboard() {
             </svg>
             Create Match
           </button>
-          <button className="btn btn-secondary">
+          <button className="btn btn-secondary" onClick={() => window.location.href = '/matchmaking'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -151,14 +197,14 @@ function Dashboard() {
             </svg>
             Join Match
           </button>
-          <button className="btn btn-outline">
+          <button className="btn btn-outline" onClick={handleFindRival}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
             Find Rival Team
           </button>
-          <button className="btn btn-outline">
+          <button className="btn btn-outline" onClick={handleCreateTeam}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -253,7 +299,7 @@ function Dashboard() {
                     <span className="badge badge-info">{match.sport}</span>
                     <span className="match-players">{match.players}</span>
                   </div>
-                  <button className="btn btn-success btn-sm">Join</button>
+                  <button className="btn btn-success btn-sm" onClick={() => handleJoinMatch(match.id)}>Join</button>
                 </div>
               ))
             ) : (

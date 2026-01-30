@@ -1,17 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Logger } from '@nestjs/common';
 import { MatchesService } from './matches.service';
 
 @Controller('matches')
 export class MatchesController {
+  private readonly logger = new Logger(MatchesController.name);
+
   constructor(private matchesService: MatchesService) {}
 
   @Get()
   async findAll() {
+    this.logger.log('GET /matches - Fetching all matches');
     return this.matchesService.findAll();
   }
 
   @Get(':id')
   async findOne(@Param('id') id: number) {
+    this.logger.log(`GET /matches/${id} - Fetching match`);
     return this.matchesService.findOne(id);
   }
 
@@ -22,15 +26,25 @@ export class MatchesController {
     sport: string;
     scheduled_at: string;
   }) {
-    const matchData = {
-      ...data,
-      scheduled_at: new Date(data.scheduled_at),
-    };
-    return this.matchesService.create(matchData);
+    this.logger.log(`POST /matches - Creating match with data:`, data);
+    try {
+      const matchData = {
+        ...data,
+        scheduled_at: new Date(data.scheduled_at),
+      };
+      this.logger.log(`Converted match data:`, matchData);
+      const result = await this.matchesService.create(matchData);
+      this.logger.log(`Match created successfully:`, result);
+      return result;
+    } catch (error) {
+      this.logger.error(`Error creating match:`, error);
+      throw error;
+    }
   }
 
   @Post(':id/participants')
   async addParticipant(@Param('id') id: number, @Body() body: { user_id: number; role?: string }) {
+    this.logger.log(`POST /matches/${id}/participants - Adding participant:`, body);
     return this.matchesService.addParticipant(id, body.user_id, body.role);
   }
 

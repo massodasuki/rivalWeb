@@ -1,19 +1,26 @@
 import { get, post, patch, del } from './api';
 
-// Types for matches
+// Types for matches (matching backend entity)
 export interface Match {
   id: number;
   home_team_id?: number;
   away_team_id?: number;
   sport: string;
+  location?: string;
   scheduled_at: string;
   status?: string;
-  location?: string;
   created_at?: string;
   updated_at?: string;
+  // Relations (populated by backend)
+  home_team?: {
+    id: number;
+    name: string;
+  };
+  away_team?: {
+    id: number;
+    name: string;
+  };
   // Additional fields for UI
-  home_team?: string;
-  away_team?: string;
   teams?: string;
   time?: string;
   players?: string;
@@ -21,8 +28,19 @@ export interface Match {
 }
 
 export interface MatchParticipant {
+  id: number;
+  match_id: number;
   user_id: number;
   role?: string;
+  goals?: number;
+  assists?: number;
+  rating?: number;
+}
+
+export interface MatchStat {
+  id: number;
+  match_id: number;
+  user_id: number;
   goals?: number;
   assists?: number;
   rating?: number;
@@ -33,6 +51,7 @@ export interface CreateMatchData {
   away_team_id?: number;
   sport: string;
   scheduled_at: string;
+  location?: string;
 }
 
 export interface UpdateMatchStatusData {

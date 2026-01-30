@@ -1,5 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Team } from '../../teams/entities/team.entity';
+import { MatchParticipant } from './match-participant.entity';
+import { MatchStat } from './match-stat.entity';
 
 @Entity('matches')
 export class Match {
@@ -37,4 +39,10 @@ export class Match {
   @ManyToOne(() => Team, { nullable: true })
   @JoinColumn({ name: 'away_team_id' })
   away_team: Team;
+
+  @OneToMany(() => MatchParticipant, participant => participant.match)
+  participants: MatchParticipant[];
+
+  @OneToMany(() => MatchStat, stat => stat.match)
+  stats: MatchStat[];
 }

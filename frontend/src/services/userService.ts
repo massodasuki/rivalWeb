@@ -1,6 +1,6 @@
 import { get, patch, del } from './api';
 
-// Types for users
+// Types for users (matching backend entity)
 export interface User {
   id: number;
   name: string;
@@ -16,6 +16,22 @@ export interface User {
   // Additional fields for UI
   team?: string;
   teamRank?: number;
+}
+
+// Backend entity type (with password_hash - not for frontend use)
+export interface UserEntity {
+  id: number;
+  name: string;
+  email: string;
+  password_hash: string;
+  skill_level?: number;
+  location?: string;
+  sport_preferences?: string[];
+  avatar?: string;
+  phone?: string;
+  primary_sport?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserStats {

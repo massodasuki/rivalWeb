@@ -9,13 +9,21 @@ async function bootstrap() {
   
   // Enable CORS for frontend requests
   app.enableCors({
-    origin: configService.get('CORS_ORIGIN') || process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
+    exposedHeaders: ['Access-Control-Allow-Origin'],
+    preflightContinue: false,
   });
   
-  app.useGlobalPipes(new ValidationPipe());
+  // Configure ValidationPipe with whitelist
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    disableErrorMessages: false,
+  }));
   
   const port = configService.get('PORT') || process.env.PORT || 3001;
   await app.listen(port);

@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import { Match } from './match.entity';
 import { User } from '../../auth/entities/user.entity';
 
 @Entity('match_participants')
@@ -19,9 +20,9 @@ export class MatchParticipant {
   @CreateDateColumn({ name: 'joined_at' })
   joined_at: Date;
 
-  @ManyToOne('Match')
+  @ManyToOne(() => Match, match => match.participants)
   @JoinColumn({ name: 'match_id' })
-  match: any;
+  match: Match;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

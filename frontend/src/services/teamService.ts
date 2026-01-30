@@ -1,6 +1,6 @@
 import { get, post, patch, del } from './api';
 
-// Types for teams
+// Types for teams (matching backend entity)
 export interface Team {
   id: number;
   name: string;
@@ -17,6 +17,7 @@ export interface Team {
 }
 
 export interface TeamMember {
+  id?: number;
   user_id: number;
   role?: string;
 }

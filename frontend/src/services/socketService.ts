@@ -13,41 +13,59 @@ const getBackendUrl = () => {
   return 'http://localhost:3001';
 };
 
+// Get frontend URL for CORS
+const getFrontendUrl = () => {
+  if (import.meta.env.VITE_FRONTEND_URL) {
+    return import.meta.env.VITE_FRONTEND_URL;
+  }
+  // Default ports for common development setups
+  return 'http://localhost:3000';
+};
+
 /**
  * Get or create the socket connection
  * @param token - JWT authentication token
  * @returns Socket instance
  */
 export const getSocket = (token?: string): Socket => {
-  if (!socket) {
-    const backendUrl = getBackendUrl();
-    socket = io(`${backendUrl}/socket.io`, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
-
-    socket.on('connect', () => {
-      console.log('Socket connected:', socket?.id);
-    });
-
-    socket.on('disconnect', (reason: string) => {
-      console.log('Socket disconnected:', reason);
-    });
-
-    socket.on('connect_error', (error: Error) => {
-      console.error('Socket connection error:', error.message);
-    });
+  // Always disconnect existing socket and create a new one with the token
+  if (socket) {
+    socket.disconnect();
+    socket = null;
   }
 
-  // Update token if provided
-  if (token) {
-    socket.auth = { token };
-  }
+  const backendUrl = getBackendUrl();
+  
+  socket = io(`${backendUrl}/socket.io`, {
+    auth: { token: token || localStorage.getItem('authToken') },
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    forceNew: true, // Always create a new connection
+  });
+
+  socket.on('connect', () => {
+    console.log('Socket connected:', socket?.id);
+  });
+
+  socket.on('disconnect', (reason: string) => {
+    console.log('Socket disconnected:', reason);
+  });
+
+  socket.on('connect_error', (error: Error) => {
+    console.error('Socket connection error:', error.message);
+  });
 
   return socket;
+};
+
+/**
+ * Reconnect socket with a new token (for login/token refresh)
+ */
+export const reconnectSocketWithToken = (): Socket => {
+  const token = localStorage.getItem('authToken') || undefined;
+  return getSocket(token);
 };
 
 /**

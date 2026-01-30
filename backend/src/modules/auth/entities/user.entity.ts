@@ -26,8 +26,8 @@ export class User {
   @Column({ nullable: true })
   skill_level: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  location: string; // Store as WKT or use PostGIS types
+  @Column({ type: 'geography', spatialFeatureType: 'Point', srid: 4326, nullable: true, name: 'location' })
+  location: string;
 
   @Column({ type: 'text', array: true, nullable: true })
   sport_preferences: string[];
