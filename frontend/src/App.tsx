@@ -1,12 +1,81 @@
-import { Routes, Route, NavLink } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Teams from './pages/Teams';
 import Matchmaking from './pages/Matchmaking';
 import Community from './pages/Community';
 import Stats from './pages/Stats';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
+import SignUp from './pages/SignUp';
+import { useEffect, useState } from 'react';
+import { authService } from './services/authService';
 
-function App() {
+// Protected Route wrapper component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated());
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh' 
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Guest Route wrapper (only for unauthenticated users)
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated());
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100vh' 
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const handleLogout = () => {
+    authService.logout();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="app">
       <div className="layout">
@@ -66,19 +135,87 @@ function App() {
               Settings
             </NavLink>
           </nav>
+          <div className="sidebar-footer">
+            <button className="logout-btn" onClick={handleLogout}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logout
+            </button>
+          </div>
         </aside>
         <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/matchmaking" element={<Matchmaking />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+          {children}
         </main>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      {/* Public routes (guest only) */}
+      <Route path="/login" element={
+        <GuestRoute>
+          <Login />
+        </GuestRoute>
+      } />
+      <Route path="/signup" element={
+        <GuestRoute>
+          <SignUp />
+        </GuestRoute>
+      } />
+
+      {/* Protected routes (require authentication) */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Dashboard />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/teams" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Teams />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/matchmaking" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Matchmaking />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/community" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Community />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/stats" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Stats />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <AppLayout>
+            <Settings />
+          </AppLayout>
+        </ProtectedRoute>
+      } />
+
+      {/* Catch all - redirect to dashboard */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
