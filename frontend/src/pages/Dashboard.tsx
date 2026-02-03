@@ -104,14 +104,25 @@ function Dashboard() {
   const handleCreateMatch = async (formData: MatchFormData): Promise<void> => {
     try {
       console.log('Creating match with data:', formData);
-      await matchService.createMatch(formData);
+      
+      // Transform form data to match backend DTO
+      await matchService.createMatch({
+        sport: formData.sport,
+        scheduled_at: formData.scheduled_at,
+        location: formData.location,
+        home_team: formData.home_team,
+        away_team: formData.away_team,
+        max_players: formData.max_players,
+        description: formData.description,
+      });
+      
       console.log('✅ Match created successfully');
       fetchDashboardData();
     } catch (err) {
       console.error('❌ Error creating match:', err);
       throw err;
     }
-  };
+  };;
 
   const handleJoinMatch = async (matchId: number) => {
     try {
@@ -177,12 +188,12 @@ function Dashboard() {
 
   // Transform matches for display
   const suggestedMatches = matches.slice(0, 4).map((match) => {
-    const homeName = typeof match.home_team === 'string' 
+    const homeName = match.home_team_name || (typeof match.home_team === 'string' 
       ? match.home_team 
-      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD';
-    const awayName = typeof match.away_team === 'string' 
+      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD');
+    const awayName = match.away_team_name || (typeof match.away_team === 'string' 
       ? match.away_team 
-      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD';
+      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD');
     
     return {
       id: match.id,
@@ -196,12 +207,12 @@ function Dashboard() {
   });
 
   const upcomingMatches = matches.slice(0, 3).map((match) => {
-    const homeName = typeof match.home_team === 'string' 
+    const homeName = match.home_team_name || (typeof match.home_team === 'string' 
       ? match.home_team 
-      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD';
-    const awayName = typeof match.away_team === 'string' 
+      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD');
+    const awayName = match.away_team_name || (typeof match.away_team === 'string' 
       ? match.away_team 
-      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD';
+      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD');
     
     return {
       id: match.id,

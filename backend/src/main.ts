@@ -17,10 +17,10 @@ async function bootstrap() {
     preflightContinue: false,
   });
   
-  // Configure ValidationPipe with whitelist
+  // Configure ValidationPipe with whitelist (forbidNonWhitelisted disabled to allow additional fields)
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true,
+    forbidNonWhitelisted: false,
     transform: true,
     disableErrorMessages: false,
   }));

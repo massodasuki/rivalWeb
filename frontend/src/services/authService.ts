@@ -32,7 +32,7 @@ export interface AuthResponse {
 export const authService = {
   // Login
   async login(data: LoginData): Promise<AuthResponse> {
-    const response = await post<AuthResponse>('/auth/login', data);
+    const response = await post<AuthResponse>('/api/auth/login', data);
     // Store token and user ID
     localStorage.setItem('authToken', response.access_token);
     localStorage.setItem('userId', response.user.id.toString());
@@ -41,7 +41,7 @@ export const authService = {
 
   // Register
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await post<AuthResponse>('/auth/register', data);
+    const response = await post<AuthResponse>('/api/auth/register', data);
     // Store token and user ID
     localStorage.setItem('authToken', response.access_token);
     localStorage.setItem('userId', response.user.id.toString());
@@ -50,7 +50,7 @@ export const authService = {
 
   // Get current user profile
   async getCurrentUser(): Promise<AuthResponse['user']> {
-    return get<AuthResponse['user']>('/auth/profile');
+    return get<AuthResponse['user']>('/api/auth/profile');
   },
 
   // Logout

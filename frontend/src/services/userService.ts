@@ -76,42 +76,42 @@ export interface UpdatePasswordData {
 export const userService = {
   // Get all users
   async getUsers(): Promise<User[]> {
-    return get<User[]>('/users');
+    return get<User[]>('/api/users');
   },
 
   // Get a single user by ID
   async getUser(id: number): Promise<User> {
-    return get<User>(`/users/${id}`);
+    return get<User>(`/api/users/${id}`);
   },
 
   // Get user stats
   async getUserStats(id: number): Promise<UserStats> {
-    return get<UserStats>(`/users/${id}/stats`);
+    return get<UserStats>(`/api/users/${id}/stats`);
   },
 
   // Update a user
   async updateUser(id: number, data: UpdateUserData): Promise<User> {
-    return patch<User>(`/users/${id}`, data);
+    return patch<User>(`/api/users/${id}`, data);
   },
 
   // Delete a user
   async deleteUser(id: number): Promise<void> {
-    return del(`/users/${id}`);
+    return del(`/api/users/${id}`);
   },
 
   // Update notification preferences
   async updateNotifications(id: number, data: UpdateNotificationsData): Promise<{ status: string }> {
-    return patch<{ status: string }>(`/users/${id}/notifications`, data);
+    return patch<{ status: string }>(`/api/users/${id}/notifications`, data);
   },
 
   // Update privacy settings
   async updatePrivacy(id: number, data: UpdatePrivacyData): Promise<{ status: string }> {
-    return patch<{ status: string }>(`/users/${id}/privacy`, data);
+    return patch<{ status: string }>(`/api/users/${id}/privacy`, data);
   },
 
   // Update password
   async updatePassword(id: number, data: UpdatePasswordData): Promise<{ status: string }> {
-    return post<{ status: string }>(`/users/${id}/password`, data);
+    return post<{ status: string }>(`/api/users/${id}/password`, data);
   },
 
   // Get current user profile (uses /auth/profile endpoint)

@@ -44,12 +44,22 @@ CREATE TABLE matches (
     id SERIAL PRIMARY KEY,
     home_team_id INT REFERENCES teams(id) ON DELETE CASCADE,
     away_team_id INT REFERENCES teams(id),
+    home_team_name VARCHAR(100),
+    away_team_name VARCHAR(100),
     sport VARCHAR(50) NOT NULL,
     location GEOGRAPHY(POINT, 4326),
     scheduled_at TIMESTAMP NOT NULL,
     status VARCHAR(20) DEFAULT 'pending', -- pending, confirmed, completed, cancelled
+    max_players INT DEFAULT 10,
+    description VARCHAR(500),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Migration: Add new columns to existing matches table
+-- ALTER TABLE matches ADD COLUMN home_team_name VARCHAR(100);
+-- ALTER TABLE matches ADD COLUMN away_team_name VARCHAR(100);
+-- ALTER TABLE matches ADD COLUMN max_players INT DEFAULT 10;
+-- ALTER TABLE matches ADD COLUMN description VARCHAR(500);
 
 -- MATCH PARTICIPANTS
 CREATE TABLE match_participants (

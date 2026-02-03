@@ -23,14 +23,27 @@ export class MatchesController {
   async create(@Body() data: {
     home_team_id?: number;
     away_team_id?: number;
+    home_team?: string;
+    away_team?: string;
     sport: string;
     scheduled_at: string;
+    location?: string;
+    max_players?: number;
+    description?: string;
   }) {
     this.logger.log(`POST /matches - Creating match with data:`, data);
     try {
+      // Extract only the fields that match the entity
       const matchData = {
-        ...data,
+        home_team_id: data.home_team_id,
+        away_team_id: data.away_team_id,
+        home_team_name: data.home_team,
+        away_team_name: data.away_team,
+        sport: data.sport,
         scheduled_at: new Date(data.scheduled_at),
+        location: data.location,
+        max_players: data.max_players || 10,
+        description: data.description,
       };
       this.logger.log(`Converted match data:`, matchData);
       const result = await this.matchesService.create(matchData);

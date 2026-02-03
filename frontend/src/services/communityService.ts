@@ -49,42 +49,42 @@ export interface EventRegistrationData {
 export const communityService = {
   // Get all community posts
   async getPosts(): Promise<CommunityPost[]> {
-    return get<CommunityPost[]>('/community');
+    return get<CommunityPost[]>('/api/community');
   },
 
   // Get a single post by ID
   async getPost(id: number): Promise<CommunityPost> {
-    return get<CommunityPost>(`/community/${id}`);
+    return get<CommunityPost>(`/api/community/${id}`);
   },
 
   // Create a new post
   async createPost(data: CreatePostData): Promise<CommunityPost> {
-    return post<CommunityPost>('/community', data);
+    return post<CommunityPost>('/api/community', data);
   },
 
   // Update a post
   async updatePost(id: number, data: UpdatePostData): Promise<CommunityPost> {
-    return patch<CommunityPost>(`/community/${id}`, data);
+    return patch<CommunityPost>(`/api/community/${id}`, data);
   },
 
   // Delete a post
   async deletePost(id: number): Promise<void> {
-    return del(`/community/${id}`);
+    return del(`/api/community/${id}`);
   },
 
   // Reply to a post
   async replyToPost(id: number, data: ReplyPostData): Promise<{ status: string }> {
-    return post<{ status: string }>(`/community/${id}/replies`, data);
+    return post<{ status: string }>(`/api/community/${id}/replies`, data);
   },
 
   // Register for an event
   async registerEvent(data: EventRegistrationData): Promise<{ status: string }> {
-    return post<{ status: string }>(`/community/events/register`, data);
+    return post<{ status: string }>(`/api/community/events/register`, data);
   },
 
   // Join an event
   async joinEvent(data: EventRegistrationData): Promise<{ status: string }> {
-    return post<{ status: string }>(`/community/events/join`, data);
+    return post<{ status: string }>(`/api/community/events/join`, data);
   },
 };
 

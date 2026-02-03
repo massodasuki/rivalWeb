@@ -14,6 +14,18 @@ export class Match {
   @Column({ name: 'away_team_id', nullable: true })
   away_team_id: number;
 
+  @Column({ name: 'home_team_name', nullable: true, length: 100 })
+  home_team_name: string;
+
+  @Column({ name: 'away_team_name', nullable: true, length: 100 })
+  away_team_name: string;
+
+  @Column({ name: 'max_players', default: 10 })
+  max_players: number;
+
+  @Column({ nullable: true, length: 500 })
+  description: string;
+
   @Column({ length: 50 })
   sport: string;
 

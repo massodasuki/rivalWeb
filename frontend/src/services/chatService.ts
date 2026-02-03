@@ -22,15 +22,15 @@ export interface SendMessageData {
 
 export const chatService = {
   async getRooms(): Promise<ChatRoom[]> {
-    return get<ChatRoom[]>('/chat/rooms');
+    return get<ChatRoom[]>('/api/chat/rooms');
   },
 
   async getMessages(roomId: number): Promise<ChatMessage[]> {
-    return get<ChatMessage[]>(`/chat/rooms/${roomId}/messages`);
+    return get<ChatMessage[]>(`/api/chat/rooms/${roomId}/messages`);
   },
 
   async sendMessage(data: SendMessageData): Promise<ChatMessage> {
-    return post<ChatMessage>('/chat/messages', data);
+    return post<ChatMessage>('/api/chat/messages', data);
   },
 };
 
