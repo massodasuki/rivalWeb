@@ -17,16 +17,31 @@ export class MatchesService {
   ) {}
 
   async findAll(): Promise<Match[]> {
-    return this.matchesRepository.find({
-      relations: ['home_team', 'away_team', 'participants', 'stats'],
-    });
+    try {
+      return this.matchesRepository.find({
+        relations: ['home_team', 'away_team', 'participants', 'stats'],
+      });
+    } catch (error) {
+      // Fallback for older schema builds where participants/stats relations don't exist
+      return this.matchesRepository.find({
+        relations: ['home_team', 'away_team'],
+      });
+    }
   }
 
   async findOne(id: number): Promise<Match> {
-    const match = await this.matchesRepository.findOne({
-      where: { id },
-      relations: ['home_team', 'away_team', 'participants', 'stats'],
-    });
+    let match: Match | null = null;
+    try {
+      match = await this.matchesRepository.findOne({
+        where: { id },
+        relations: ['home_team', 'away_team', 'participants', 'stats'],
+      });
+    } catch (error) {
+      match = await this.matchesRepository.findOne({
+        where: { id },
+        relations: ['home_team', 'away_team'],
+      });
+    }
     if (!match) {
       throw new NotFoundException(`Match with ID ${id} not found`);
     }

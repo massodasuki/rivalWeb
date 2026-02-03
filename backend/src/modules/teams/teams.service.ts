@@ -55,4 +55,17 @@ export class TeamsService {
       throw new NotFoundException(`Team with ID ${id} not found`);
     }
   }
+
+  async requestJoin(teamId: number, userId: number, message?: string): Promise<{ status: string; message?: string }> {
+    await this.findOne(teamId);
+    return { status: 'request_received', message: message || '' };
+  }
+
+  async acceptInvite(inviteId: number): Promise<{ status: string; inviteId: number }> {
+    return { status: 'invite_accepted', inviteId };
+  }
+
+  async declineInvite(inviteId: number): Promise<{ status: string; inviteId: number }> {
+    return { status: 'invite_declined', inviteId };
+  }
 }

@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { communityService, CommunityPost } from '../services/communityService';
+import { chatService } from '../services/chatService';
 
 function Community() {
   const [activeTab, setActiveTab] = useState('forum');
@@ -7,6 +8,10 @@ function Community() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState(1);
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatMessages, setChatMessages] = useState<string[]>([]);
+  const postInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Mock data for chat rooms and events (these would come from separate endpoints)
   const chatRooms = [
@@ -94,12 +99,81 @@ function Community() {
     }
   };
 
+  const handleNewPostClick = () => {
+    setActiveTab('forum');
+    setTimeout(() => postInputRef.current?.focus(), 0);
+  };
+
+  const handleReply = async (postId: number) => {
+    const reply = window.prompt('Reply to this post?');
+    if (!reply) return;
+    try {
+      const userId = localStorage.getItem('userId');
+      await communityService.replyToPost(postId, {
+        user_id: userId ? parseInt(userId, 10) : 1,
+        content: reply,
+      });
+      alert('Reply sent.');
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, replies: (p.replies || 0) + 1 } : p))
+      );
+    } catch (err) {
+      console.error('Error replying to post:', err);
+      alert('Failed to reply.');
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatMessage.trim()) return;
+    try {
+      const userId = localStorage.getItem('userId');
+      await chatService.sendMessage({
+        room_id: selectedRoomId,
+        sender_id: userId ? parseInt(userId, 10) : 1,
+        message: chatMessage,
+      });
+      setChatMessages((prev) => [...prev, chatMessage]);
+      setChatMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Failed to send message.');
+    }
+  };
+
+  const handleRegisterEvent = async (eventId: number) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      await communityService.registerEvent({
+        user_id: userId ? parseInt(userId, 10) : 1,
+        event_id: eventId,
+      });
+      alert('Registered for event.');
+    } catch (err) {
+      console.error('Error registering for event:', err);
+      alert('Failed to register.');
+    }
+  };
+
+  const handleJoinEvent = async (eventId: number) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      await communityService.joinEvent({
+        user_id: userId ? parseInt(userId, 10) : 1,
+        event_id: eventId,
+      });
+      alert('Joined event.');
+    } catch (err) {
+      console.error('Error joining event:', err);
+      alert('Failed to join.');
+    }
+  };
+
   return (
     <div className="community">
       <header className="header">
         <h1 className="header-title">Community</h1>
         <div className="header-actions">
-          <button className="btn btn-primary">+ New Post</button>
+          <button className="btn btn-primary" onClick={handleNewPostClick}>+ New Post</button>
         </div>
       </header>
 
@@ -125,6 +199,7 @@ function Community() {
                 rows={3}
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
+                ref={postInputRef}
               />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
@@ -150,7 +225,7 @@ function Community() {
                   <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{post.content}</p>
                   <div style={{ display: 'flex', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                     <span>💬 {post.replies || 0} replies</span>
-                    <button className="btn btn-outline btn-sm">Reply</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => handleReply(post.id)}>Reply</button>
                   </div>
                 </div>
               ))
@@ -163,7 +238,12 @@ function Community() {
         <div className="chat-container">
           <div className="chat-rooms">
             {chatRooms.map((room) => (
-              <div key={room.id} className="chat-room">
+              <div
+                key={room.id}
+                className="chat-room"
+                onClick={() => setSelectedRoomId(room.id)}
+                style={{ cursor: 'pointer', border: selectedRoomId === room.id ? '1px solid var(--primary)' : '1px solid transparent' }}
+              >
                 <div style={{ fontWeight: 600 }}>{room.name}</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                   {room.members} members | {room.active} online
@@ -188,10 +268,16 @@ function Community() {
                 <div className="chat-message-sender">Mike J.</div>
                 <div className="chat-message-content">Count me in too! 8 PM works?</div>
               </div>
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className="chat-message">
+                  <div className="chat-message-sender">You</div>
+                  <div className="chat-message-content">{msg}</div>
+                </div>
+              ))}
             </div>
             <div className="chat-input">
-              <input type="text" className="form-input" placeholder="Type a message..." />
-              <button className="btn btn-primary">Send</button>
+              <input type="text" className="form-input" placeholder="Type a message..." value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+              <button className="btn btn-primary" onClick={handleSendMessage}>Send</button>
             </div>
           </div>
         </div>
@@ -208,7 +294,7 @@ function Community() {
               <div>📍 Sports Arena A</div>
               <div>💵 Entry: $50/team</div>
             </div>
-            <button className="btn btn-primary" style={{ width: '100%' }}>Register</button>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleRegisterEvent(1)}>Register</button>
           </div>
           <div className="card">
             <span className="badge badge-warning">Upcoming</span>
@@ -219,7 +305,7 @@ function Community() {
               <div>📍 City Gym</div>
               <div>💵 Entry: $100/team</div>
             </div>
-            <button className="btn btn-primary" style={{ width: '100%' }}>Register</button>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleRegisterEvent(2)}>Register</button>
           </div>
           <div className="card">
             <span className="badge badge-success">Open</span>
@@ -230,7 +316,7 @@ function Community() {
               <div>📍 Tennis Center</div>
               <div>💵 Free</div>
             </div>
-            <button className="btn btn-primary" style={{ width: '100%' }}>Join</button>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => handleJoinEvent(3)}>Join</button>
           </div>
         </div>
       )}

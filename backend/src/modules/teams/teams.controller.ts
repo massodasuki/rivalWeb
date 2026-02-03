@@ -25,6 +25,21 @@ export class TeamsController {
     return this.teamsService.addMember(id, body.user_id, body.role);
   }
 
+  @Post(':id/join-requests')
+  async requestJoin(@Param('id') id: number, @Body() body: { user_id: number; message?: string }) {
+    return this.teamsService.requestJoin(id, body.user_id, body.message);
+  }
+
+  @Post('invites/:inviteId/accept')
+  async acceptInvite(@Param('inviteId') inviteId: number) {
+    return this.teamsService.acceptInvite(inviteId);
+  }
+
+  @Post('invites/:inviteId/decline')
+  async declineInvite(@Param('inviteId') inviteId: number) {
+    return this.teamsService.declineInvite(inviteId);
+  }
+
   @Delete(':id/members/:userId')
   async removeMember(@Param('id') id: number, @Param('userId') userId: number) {
     return this.teamsService.removeMember(id, userId);

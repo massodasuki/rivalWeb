@@ -1,4 +1,4 @@
-import { get, patch, del } from './api';
+import { get, patch, del, post } from './api';
 
 // Types for users (matching backend entity)
 export interface User {
@@ -52,6 +52,26 @@ export interface UpdateUserData {
   skill_level?: number;
 }
 
+export interface UpdateNotificationsData {
+  email?: boolean;
+  push?: boolean;
+  matchReminders?: boolean;
+  teamInvites?: boolean;
+  friendRequests?: boolean;
+}
+
+export interface UpdatePrivacyData {
+  profileVisible?: boolean;
+  showOnlineStatus?: boolean;
+  allowFriendRequests?: boolean;
+  showInLeaderboards?: boolean;
+}
+
+export interface UpdatePasswordData {
+  current_password?: string;
+  new_password: string;
+}
+
 // User API functions
 export const userService = {
   // Get all users
@@ -77,6 +97,21 @@ export const userService = {
   // Delete a user
   async deleteUser(id: number): Promise<void> {
     return del(`/users/${id}`);
+  },
+
+  // Update notification preferences
+  async updateNotifications(id: number, data: UpdateNotificationsData): Promise<{ status: string }> {
+    return patch<{ status: string }>(`/users/${id}/notifications`, data);
+  },
+
+  // Update privacy settings
+  async updatePrivacy(id: number, data: UpdatePrivacyData): Promise<{ status: string }> {
+    return patch<{ status: string }>(`/users/${id}/privacy`, data);
+  },
+
+  // Update password
+  async updatePassword(id: number, data: UpdatePasswordData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/users/${id}/password`, data);
   },
 
   // Get current user profile (uses /auth/profile endpoint)

@@ -39,4 +39,17 @@ export class CommunityService {
       throw new NotFoundException(`Community post with ID ${id} not found`);
     }
   }
+
+  async reply(id: number, data: { user_id: number; content: string }): Promise<{ status: string }> {
+    await this.findOne(id);
+    return { status: 'reply_received' };
+  }
+
+  async registerEvent(data: { user_id: number; event_id: number }): Promise<{ status: string }> {
+    return { status: 'event_registered' };
+  }
+
+  async joinEvent(data: { user_id: number; event_id: number }): Promise<{ status: string }> {
+    return { status: 'event_joined' };
+  }
 }

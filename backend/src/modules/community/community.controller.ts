@@ -20,6 +20,21 @@ export class CommunityController {
     return this.communityService.create(data);
   }
 
+  @Post(':id/replies')
+  async reply(@Param('id') id: number, @Body() data: { user_id: number; content: string }) {
+    return this.communityService.reply(id, data);
+  }
+
+  @Post('events/register')
+  async registerEvent(@Body() data: { user_id: number; event_id: number }) {
+    return this.communityService.registerEvent(data);
+  }
+
+  @Post('events/join')
+  async joinEvent(@Body() data: { user_id: number; event_id: number }) {
+    return this.communityService.joinEvent(data);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: number, @Body() data: Partial<{ title: string; content: string; type: string }>) {
     return this.communityService.update(id, data);

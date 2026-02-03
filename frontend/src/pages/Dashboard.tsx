@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { matchService, Match } from '../services/matchService';
 import { teamService, Team } from '../services/teamService';
 import { communityService, CommunityPost } from '../services/communityService';
+import CreateMatchModal, { MatchFormData } from '../components/CreateMatchModal';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -10,6 +11,7 @@ function Dashboard() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateMatchModalOpen, setIsCreateMatchModalOpen] = useState(false);
 
   // Mock data for leaderboard and activity (would need separate endpoints)
   const leaderboard = [
@@ -58,9 +60,15 @@ function Dashboard() {
         teamService.getTeams().catch(() => []),
         communityService.getPosts().catch(() => []),
       ]);
-      setMatches(matchesData);
-      setTeams(teamsData);
-      setPosts(postsData.slice(0, 4)); // Only show first 4 posts
+      
+      // Ensure we have arrays
+      const safeMatches = Array.isArray(matchesData) ? matchesData : [];
+      const safeTeams = Array.isArray(teamsData) ? teamsData : [];
+      const safePosts = Array.isArray(postsData) ? postsData : [];
+      
+      setMatches(safeMatches);
+      setTeams(safeTeams);
+      setPosts(safePosts.slice(0, 4)); // Only show first 4 posts
       setError(null);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -89,21 +97,19 @@ function Dashboard() {
   }, [fetchDashboardData]);
 
   // Handle button clicks
-  const handleCreateMatch = async () => {
+  const handleCreateMatchClick = () => {
+    setIsCreateMatchModalOpen(true);
+  };
+
+  const handleCreateMatch = async (formData: MatchFormData): Promise<void> => {
     try {
-      console.log('Create Match button clicked - calling backend...');
-      // Example: Create a new match
-      const newMatch = await matchService.createMatch({
-        sport: 'Futsal',
-        scheduled_at: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-      });
-      console.log('✅ Match created successfully:', newMatch);
-      // Refresh data after creating match
+      console.log('Creating match with data:', formData);
+      await matchService.createMatch(formData);
+      console.log('✅ Match created successfully');
       fetchDashboardData();
-      alert('Match created successfully!');
     } catch (err) {
       console.error('❌ Error creating match:', err);
-      alert('Failed to create match. Please check the console for details.');
+      throw err;
     }
   };
 
@@ -124,46 +130,108 @@ function Dashboard() {
 
   const handleFindRival = () => {
     console.log('Find Rival button clicked');
-    // Navigate to matchmaking page or open search modal
-    window.location.href = '/matchmaking';
+    teamService.getTeams()
+      .then((data) => {
+        alert(`Found ${data.length} teams. Redirecting to Teams page.`);
+        window.location.href = '/teams';
+      })
+      .catch(() => {
+        window.location.href = '/teams';
+      });
   };
 
-  const handleCreateTeam = () => {
+  const handleCreateTeam = async () => {
     console.log('Create Team button clicked');
-    // Navigate to teams page or open create team modal
-    window.location.href = '/teams';
+    const name = window.prompt('Team name?');
+    if (!name) return;
+    const sport = window.prompt('Sport (e.g., futsal, basketball, tennis)?', 'futsal') || 'futsal';
+    try {
+      await teamService.createTeam({ name, sport });
+      alert('Team created successfully.');
+      window.location.href = '/teams';
+    } catch (err) {
+      console.error('Error creating team:', err);
+      alert('Failed to create team.');
+    }
+  };
+
+  const handleQuickJoin = async () => {
+    const matchId = suggestedMatches[0]?.id;
+    if (!matchId) {
+      window.location.href = '/matchmaking';
+      return;
+    }
+    try {
+      const userId = localStorage.getItem('userId');
+      await matchService.addParticipant(matchId, {
+        user_id: userId ? parseInt(userId, 10) : 1,
+        role: 'player',
+      });
+      alert('Joined match successfully.');
+      fetchDashboardData();
+    } catch (err) {
+      console.error('Error joining match:', err);
+      alert('Failed to join match.');
+    }
   };
 
   // Transform matches for display
-  const suggestedMatches = matches.slice(0, 4).map((match) => ({
-    id: match.id,
-    home: match.home_team || match.teams?.split(' vs ')[0] || 'TBD',
-    away: match.away_team || match.teams?.split(' vs ')[1] || 'TBD',
-    sport: match.sport,
-    time: match.time || new Date(match.scheduled_at).toLocaleString(),
-    players: match.players || 'Open',
-    distance: '2 km',
-  }));
+  const suggestedMatches = matches.slice(0, 4).map((match) => {
+    const homeName = typeof match.home_team === 'string' 
+      ? match.home_team 
+      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD';
+    const awayName = typeof match.away_team === 'string' 
+      ? match.away_team 
+      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD';
+    
+    return {
+      id: match.id,
+      home: homeName,
+      away: awayName,
+      sport: match.sport,
+      time: match.time || new Date(match.scheduled_at).toLocaleString(),
+      players: match.players || 'Open',
+      distance: '2 km',
+    };
+  });
 
-  const upcomingMatches = matches.slice(0, 3).map((match) => ({
-    id: match.id,
-    home: match.home_team || match.teams?.split(' vs ')[0] || 'TBD',
-    away: match.away_team || match.teams?.split(' vs ')[1] || 'TBD',
-    sport: match.sport,
-    time: match.time || new Date(match.scheduled_at).toLocaleString(),
-    location: match.location || 'TBD',
-    status: match.status || 'upcoming',
-  }));
+  const upcomingMatches = matches.slice(0, 3).map((match) => {
+    const homeName = typeof match.home_team === 'string' 
+      ? match.home_team 
+      : match.home_team?.name || match.teams?.split(' vs ')[0] || 'TBD';
+    const awayName = typeof match.away_team === 'string' 
+      ? match.away_team 
+      : match.away_team?.name || match.teams?.split(' vs ')[1] || 'TBD';
+    
+    return {
+      id: match.id,
+      home: homeName,
+      away: awayName,
+      sport: match.sport,
+      time: match.time || new Date(match.scheduled_at).toLocaleString(),
+      location: match.location || 'TBD',
+      status: match.status || 'upcoming',
+    };
+  });
 
-  const communityPosts = posts.map((post) => ({
-    id: post.id,
-    author: post.author || 'Unknown',
-    avatar: (post.author || 'U').substring(0, 2).toUpperCase(),
-    content: post.content,
-    time: post.time || 'Recently',
-    likes: post.replies || 0,
-    comments: post.replies || 0,
-  }));
+  const communityPosts = posts.map((post) => {
+    const authorName = typeof post.author === 'string' 
+      ? post.author 
+      : post.author?.name || 'Unknown';
+    const avatarText = typeof post.author === 'string' 
+      ? post.author.substring(0, 2).toUpperCase() 
+      : (post.author?.name || 'U').substring(0, 2).toUpperCase();
+    
+    return {
+      id: post.id,
+      author: authorName,
+      avatar: avatarText,
+      content: post.content,
+      time: post.time || 'Recently',
+      likes: post.replies || 0,
+      comments: post.replies || 0,
+    };
+  });
 
   return (
     <div className="dashboard">
@@ -173,14 +241,14 @@ function Dashboard() {
           <p className="header-subtitle">Welcome back, {mockUser.name}!</p>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleCreateMatch}>+ Create Match</button>
+          <button className="btn btn-primary" onClick={handleCreateMatchClick}>+ Create Match</button>
         </div>
       </header>
 
       {/* Quick Actions */}
       <div className="card quick-actions">
         <div className="quick-action-buttons">
-          <button className="btn btn-primary" onClick={handleCreateMatch}>
+          <button className="btn btn-primary" onClick={handleCreateMatchClick}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="16"/>
@@ -188,7 +256,7 @@ function Dashboard() {
             </svg>
             Create Match
           </button>
-          <button className="btn btn-secondary" onClick={() => window.location.href = '/matchmaking'}>
+          <button className="btn btn-secondary" onClick={handleQuickJoin}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -461,6 +529,12 @@ function Dashboard() {
           </tbody>
         </table>
       </div>
+
+      <CreateMatchModal
+        isOpen={isCreateMatchModalOpen}
+        onClose={() => setIsCreateMatchModalOpen(false)}
+        onCreate={handleCreateMatch}
+      />
     </div>
   );
 }

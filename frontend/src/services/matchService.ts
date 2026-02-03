@@ -11,12 +11,12 @@ export interface Match {
   status?: string;
   created_at?: string;
   updated_at?: string;
-  // Relations (populated by backend)
-  home_team?: {
+  // Relations (populated by backend) - can be string or object
+  home_team?: string | {
     id: number;
     name: string;
   };
-  away_team?: {
+  away_team?: string | {
     id: number;
     name: string;
   };
@@ -28,8 +28,8 @@ export interface Match {
 }
 
 export interface MatchParticipant {
-  id: number;
-  match_id: number;
+  id?: number;
+  match_id?: number;
   user_id: number;
   role?: string;
   goals?: number;
@@ -61,8 +61,8 @@ export interface UpdateMatchStatusData {
 // Match API functions
 export const matchService = {
   // Get all matches
-  async getMatches(): Promise<Match[]> {
-    return get<Match[]>('/matches');
+  async getMatches(params?: Record<string, string>): Promise<Match[]> {
+    return get<Match[]>('/matches', params);
   },
 
   // Get a single match by ID

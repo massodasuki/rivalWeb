@@ -2,11 +2,18 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 
 // Get backend URL from environment variable
 const getBackendUrl = (): string => {
-  if (import.meta.env.VITE_BACKEND_URL) {
-    return import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const apiUrl = import.meta.env.VITE_API_URL;
+  
+  // Use empty string (relative URL) for Vite proxy in local development
+  if (backendUrl && backendUrl.trim() !== '') {
+    return backendUrl;
   }
-  // Default to localhost:3001 for local development
-  return 'http://localhost:3001';
+  if (apiUrl && apiUrl.trim() !== '') {
+    return apiUrl;
+  }
+  // Use empty string for local development (uses Vite proxy)
+  return '';
 };
 
 // Create axios instance with default config

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { MatchParticipant } from '../matches/entities/match-participant.entity';
 import { MatchStat } from '../matches/entities/match-stat.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -68,5 +69,22 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+  }
+
+  async updateNotifications(id: number, data: Record<string, boolean>): Promise<{ status: string }> {
+    await this.findOne(id);
+    return { status: 'notifications_updated' };
+  }
+
+  async updatePrivacy(id: number, data: Record<string, boolean>): Promise<{ status: string }> {
+    await this.findOne(id);
+    return { status: 'privacy_updated' };
+  }
+
+  async updatePassword(id: number, data: { current_password?: string; new_password: string }): Promise<{ status: string }> {
+    await this.findOne(id);
+    const password_hash = await bcrypt.hash(data.new_password, 10);
+    await this.usersRepository.update(id, { password_hash });
+    return { status: 'password_updated' };
   }
 }

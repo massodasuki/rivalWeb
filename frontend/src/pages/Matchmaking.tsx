@@ -49,13 +49,86 @@ function Matchmaking() {
       const params: Record<string, string> = {};
       if (sport) params.sport = sport;
       if (location) params.location = location;
-      
-      const data = await matchService.getMatches();
-      setMatches(data);
+
+      const data = await matchService.getMatches(params);
+      const filtered = data.filter((match) => {
+        const matchSport = match.sport?.toLowerCase() || '';
+        const matchLocation = match.location?.toLowerCase() || '';
+        const sportOk = sport ? matchSport.includes(sport.toLowerCase()) : true;
+        const locationOk = location ? matchLocation.includes(location.toLowerCase()) : true;
+        return sportOk && locationOk;
+      });
+      setMatches(filtered);
     } catch (err) {
       console.error('Error searching matches:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleHostMatch = async () => {
+    const chosenSport = window.prompt('Sport (futsal, basketball, tennis)?', sport || 'futsal') || 'futsal';
+    const chosenLocation = window.prompt('Location?', location || 'Local court') || 'Local court';
+    const chosenDate = window.prompt('Scheduled date/time (ISO or readable)?', new Date(Date.now() + 86400000).toISOString());
+    if (!chosenDate) return;
+    try {
+      await matchService.createMatch({
+        sport: chosenSport,
+        location: chosenLocation,
+        scheduled_at: new Date(chosenDate).toISOString(),
+      });
+      alert('Match hosted successfully.');
+      fetchMatches();
+    } catch (err) {
+      console.error('Error hosting match:', err);
+      alert('Failed to host match.');
+    }
+  };
+
+  const handleJoinMatch = async (matchId: number) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      await matchService.addParticipant(matchId, {
+        user_id: userId ? parseInt(userId, 10) : 1,
+        role: 'player',
+      });
+      alert('Joined match successfully.');
+    } catch (err) {
+      console.error('Error joining match:', err);
+      alert('Failed to join match.');
+    }
+  };
+
+  const handleDetails = async (matchId: number) => {
+    try {
+      const match = await matchService.getMatch(matchId);
+      alert(`Match Details:\n${JSON.stringify(match, null, 2)}`);
+    } catch (err) {
+      console.error('Error fetching match details:', err);
+      alert('Failed to load match details.');
+    }
+  };
+
+  const handleEditHosted = async (matchId: number) => {
+    const status = window.prompt('Update status (confirmed/pending/cancelled)?', 'confirmed');
+    if (!status) return;
+    try {
+      await matchService.updateMatchStatus(matchId, { status });
+      alert('Match status updated.');
+    } catch (err) {
+      console.error('Error updating match status:', err);
+      alert('Failed to update match status.');
+    }
+  };
+
+  const handleCancelHosted = async (matchId: number) => {
+    if (!window.confirm('Cancel this match?')) return;
+    try {
+      await matchService.deleteMatch(matchId);
+      alert('Match cancelled.');
+    } catch (err) {
+      console.error('Error cancelling match:', err);
+      alert('Failed to cancel match.');
     }
   };
 
@@ -76,7 +149,7 @@ function Matchmaking() {
       <header className="header">
         <h1 className="header-title">Matchmaking</h1>
         <div className="header-actions">
-          <button className="btn btn-primary">+ Host Match</button>
+          <button className="btn btn-primary" onClick={handleHostMatch}>+ Host Match</button>
         </div>
       </header>
 
@@ -142,8 +215,8 @@ function Matchmaking() {
                     <div>💵 {match.price}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }}>Join Match</button>
-                    <button className="btn btn-outline">Details</button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleJoinMatch(match.id)}>Join Match</button>
+                    <button className="btn btn-outline" onClick={() => handleDetails(match.id)}>Details</button>
                   </div>
                 </div>
               ))}
@@ -178,8 +251,8 @@ function Matchmaking() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn btn-outline btn-sm">Edit</button>
-                    <button className="btn btn-danger btn-sm" style={{ marginLeft: '0.5rem' }}>Cancel</button>
+                    <button className="btn btn-outline btn-sm" onClick={() => handleEditHosted(match.id)}>Edit</button>
+                    <button className="btn btn-danger btn-sm" style={{ marginLeft: '0.5rem' }} onClick={() => handleCancelHosted(match.id)}>Cancel</button>
                   </td>
                 </tr>
               ))}

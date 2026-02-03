@@ -7,6 +7,9 @@ function Teams() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchSport, setSearchSport] = useState('');
+  const [discoverTeams, setDiscoverTeams] = useState<Team[]>([]);
 
   // Mock data for invites and search results
   const pendingInvites = [
@@ -46,22 +49,123 @@ function Teams() {
     }
   }, [activeTab, fetchTeams]);
 
-  const myTeams = teams.map((team) => ({
-    id: team.id,
-    name: team.name,
-    sport: team.sport,
-    members: team.members || 0,
-    captain: team.captain || 'Unknown',
-    wins: team.wins || 0,
-    losses: team.losses || 0,
-  }));
+  const handleCreateTeam = async () => {
+    setShowInviteModal(false);
+    const name = window.prompt('Team name?');
+    if (!name) return;
+    const sport = window.prompt('Sport (futsal, basketball, tennis)?', 'futsal') || 'futsal';
+    try {
+      await teamService.createTeam({ name, sport });
+      alert('Team created successfully.');
+      fetchTeams();
+    } catch (err) {
+      console.error('Error creating team:', err);
+      alert('Failed to create team.');
+    }
+  };
+
+  const handleManage = async (teamId: number) => {
+    try {
+      const team = await teamService.getTeam(teamId);
+      alert(`Team: ${team.name}\nSport: ${team.sport}`);
+    } catch (err) {
+      console.error('Error loading team:', err);
+    }
+  };
+
+  const handleViewRoster = async (teamId: number) => {
+    try {
+      const team = await teamService.getTeam(teamId);
+      const memberCount = Array.isArray((team as unknown as { members?: unknown }).members)
+        ? (team as unknown as { members?: unknown[] }).members?.length || 0
+        : team.members || 0;
+      alert(`Team ${team.name} has ${memberCount} members.`);
+    } catch (err) {
+      console.error('Error loading roster:', err);
+    }
+  };
+
+  const handleInvitePlayers = async (teamId: number) => {
+    const userIdInput = window.prompt('User ID to invite?');
+    if (!userIdInput) return;
+    try {
+      await teamService.addMember(teamId, { user_id: parseInt(userIdInput, 10), role: 'player' });
+      alert('Player invited.');
+    } catch (err) {
+      console.error('Error inviting player:', err);
+      alert('Failed to invite player.');
+    }
+  };
+
+  const handleAcceptInvite = async (inviteId: number) => {
+    try {
+      await teamService.acceptInvite(inviteId);
+      alert('Invite accepted.');
+    } catch (err) {
+      console.error('Error accepting invite:', err);
+      alert('Failed to accept invite.');
+    }
+  };
+
+  const handleDeclineInvite = async (inviteId: number) => {
+    try {
+      await teamService.declineInvite(inviteId);
+      alert('Invite declined.');
+    } catch (err) {
+      console.error('Error declining invite:', err);
+      alert('Failed to decline invite.');
+    }
+  };
+
+  const handleDiscoverSearch = async () => {
+    try {
+      const data = await teamService.getTeams();
+      const filtered = data.filter((team) => {
+        const nameOk = searchTerm ? team.name.toLowerCase().includes(searchTerm.toLowerCase()) : true;
+        const sportOk = searchSport ? team.sport.toLowerCase() === searchSport.toLowerCase() : true;
+        return nameOk && sportOk;
+      });
+      setDiscoverTeams(filtered);
+    } catch (err) {
+      console.error('Error searching teams:', err);
+    }
+  };
+
+  const handleRequestJoin = async (teamId: number) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      await teamService.requestJoin(teamId, {
+        user_id: userId ? parseInt(userId, 10) : 1,
+        message: 'Request to join from UI',
+      });
+      alert('Join request sent.');
+    } catch (err) {
+      console.error('Error requesting to join:', err);
+      alert('Failed to send join request.');
+    }
+  };
+
+  const myTeams = teams.map((team) => {
+    const membersCount = Array.isArray((team as unknown as { members?: unknown }).members)
+      ? (team as unknown as { members?: unknown[] }).members?.length || 0
+      : team.members || 0;
+    return {
+      id: team.id,
+      name: team.name,
+      sport: team.sport,
+      members: membersCount,
+      captain: team.captain || 'Unknown',
+      wins: team.wins || 0,
+      losses: team.losses || 0,
+    };
+  });
 
   return (
     <div className="teams">
       <header className="header">
         <h1 className="header-title">Teams</h1>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={() => setShowInviteModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setShowInviteModal(true); handleCreateTeam(); }}>
             + Create Team
           </button>
         </div>
@@ -96,7 +200,7 @@ function Teams() {
                       <h3 className="card-title">{team.name}</h3>
                       <span className="badge badge-info">{team.sport}</span>
                     </div>
-                    <button className="btn btn-outline">Manage</button>
+                    <button className="btn btn-outline" onClick={() => handleManage(team.id)}>Manage</button>
                   </div>
                   <div className="grid grid-4" style={{ marginTop: '1rem' }}>
                     <div className="stat-card">
@@ -117,8 +221,8 @@ function Teams() {
                     </div>
                   </div>
                   <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }}>View Roster</button>
-                    <button className="btn btn-secondary" style={{ flex: 1 }}>Invite Players</button>
+                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleViewRoster(team.id)}>View Roster</button>
+                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => handleInvitePlayers(team.id)}>Invite Players</button>
                   </div>
                 </div>
               ))}
@@ -149,8 +253,8 @@ function Teams() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn btn-success">Accept</button>
-                  <button className="btn btn-danger">Decline</button>
+                  <button className="btn btn-success" onClick={() => handleAcceptInvite(invite.id)}>Accept</button>
+                  <button className="btn btn-danger" onClick={() => handleDeclineInvite(invite.id)}>Decline</button>
                 </div>
               </div>
             ))
@@ -164,30 +268,35 @@ function Teams() {
             <div className="form-group">
               <label className="form-label">Search Teams</label>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <input type="text" className="form-input" placeholder="Search by name..." style={{ flex: 1 }} />
-                <select className="form-input" style={{ width: '200px' }}>
+                <input type="text" className="form-input" placeholder="Search by name..." style={{ flex: 1 }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <select className="form-input" style={{ width: '200px' }} value={searchSport} onChange={(e) => setSearchSport(e.target.value)}>
                   <option value="">All Sports</option>
                   <option value="futsal">Futsal</option>
                   <option value="basketball">Basketball</option>
                   <option value="tennis">Tennis</option>
                 </select>
-                <button className="btn btn-primary">Search</button>
+                <button className="btn btn-primary" onClick={handleDiscoverSearch}>Search</button>
               </div>
             </div>
           </div>
           <div className="card">
-            {searchResults.map((team) => (
+            {(discoverTeams.length ? discoverTeams : searchResults).map((team) => {
+              const memberCount = Array.isArray((team as unknown as { members?: unknown }).members)
+                ? (team as unknown as { members?: unknown[] }).members?.length || 0
+                : team.members || 0;
+              return (
               <div key={team.id} className="match-card">
                 <div>
                   <strong>{team.name}</strong>
                   <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{team.sport}</span>
                   <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {team.members} members | Rating: {team.rating}
+                    {memberCount} members | Rating: {team.rating}
                   </div>
                 </div>
-                <button className="btn btn-primary">Request to Join</button>
+                <button className="btn btn-primary" onClick={() => handleRequestJoin(team.id)}>Request to Join</button>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}

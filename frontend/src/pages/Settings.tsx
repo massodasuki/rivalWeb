@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { userService } from '../services/userService';
+import authService from '../services/authService';
 
 function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -9,6 +10,17 @@ function Settings() {
     matchReminders: true,
     teamInvites: true,
     friendRequests: true,
+  });
+  const [privacy, setPrivacy] = useState({
+    profileVisible: true,
+    showOnlineStatus: true,
+    allowFriendRequests: true,
+    showInLeaderboards: true,
+  });
+  const [passwords, setPasswords] = useState({
+    current: '',
+    next: '',
+    confirm: '',
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -46,6 +58,10 @@ function Settings() {
     }
   };
 
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
@@ -67,6 +83,85 @@ function Settings() {
       // Simulate save for demo
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        await userService.updateNotifications(parseInt(userId, 10), notifications);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving notifications:', err);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSavePrivacy = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        await userService.updatePrivacy(parseInt(userId, 10), privacy);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving privacy:', err);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!passwords.next || passwords.next !== passwords.confirm) {
+      alert('New password and confirm password must match.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        await userService.updatePassword(parseInt(userId, 10), {
+          current_password: passwords.current,
+          new_password: passwords.next,
+        });
+        setPasswords({ current: '', next: '', confirm: '' });
+        alert('Password updated.');
+      }
+    } catch (err) {
+      console.error('Error updating password:', err);
+      alert('Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Delete your account permanently?')) return;
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        await userService.deleteUser(parseInt(userId, 10));
+      }
+      authService.logout();
+      alert('Account deleted.');
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      alert('Failed to delete account.');
     } finally {
       setLoading(false);
     }
@@ -250,7 +345,9 @@ function Settings() {
               />
             </label>
           </div>
-          <button className="btn btn-primary" style={{ marginTop: '1.5rem' }}>Save Preferences</button>
+          <button className="btn btn-primary" style={{ marginTop: '1.5rem' }} onClick={handleSaveNotifications} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Preferences'}
+          </button>
         </div>
       )}
 
@@ -263,31 +360,33 @@ function Settings() {
                 <strong>Profile Visible</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Anyone can view your profile</p>
               </div>
-              <input type="checkbox" defaultChecked />
+              <input type="checkbox" checked={privacy.profileVisible} onChange={(e) => setPrivacy({ ...privacy, profileVisible: e.target.checked })} />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Show Online Status</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Let others see when you're online</p>
               </div>
-              <input type="checkbox" defaultChecked />
+              <input type="checkbox" checked={privacy.showOnlineStatus} onChange={(e) => setPrivacy({ ...privacy, showOnlineStatus: e.target.checked })} />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Allow Friend Requests</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Anyone can send you friend requests</p>
               </div>
-              <input type="checkbox" defaultChecked />
+              <input type="checkbox" checked={privacy.allowFriendRequests} onChange={(e) => setPrivacy({ ...privacy, allowFriendRequests: e.target.checked })} />
             </label>
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--background)', borderRadius: '0.5rem' }}>
               <div>
                 <strong>Show in Leaderboards</strong>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>Display your stats publicly</p>
               </div>
-              <input type="checkbox" defaultChecked />
+              <input type="checkbox" checked={privacy.showInLeaderboards} onChange={(e) => setPrivacy({ ...privacy, showInLeaderboards: e.target.checked })} />
             </label>
           </div>
-          <button className="btn btn-primary" style={{ marginTop: '1.5rem' }}>Save Privacy Settings</button>
+          <button className="btn btn-primary" style={{ marginTop: '1.5rem' }} onClick={handleSavePrivacy} disabled={loading}>
+            {loading ? 'Saving...' : 'Save Privacy Settings'}
+          </button>
         </div>
       )}
 
@@ -297,17 +396,19 @@ function Settings() {
             <h3 className="card-title" style={{ marginBottom: '1.5rem' }}>Change Password</h3>
             <div className="form-group">
               <label className="form-label">Current Password</label>
-              <input type="password" className="form-input" />
+              <input type="password" className="form-input" value={passwords.current} onChange={(e) => setPasswords({ ...passwords, current: e.target.value })} />
             </div>
             <div className="form-group">
               <label className="form-label">New Password</label>
-              <input type="password" className="form-input" />
+              <input type="password" className="form-input" value={passwords.next} onChange={(e) => setPasswords({ ...passwords, next: e.target.value })} />
             </div>
             <div className="form-group">
               <label className="form-label">Confirm New Password</label>
-              <input type="password" className="form-input" />
+              <input type="password" className="form-input" value={passwords.confirm} onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })} />
             </div>
-            <button className="btn btn-primary">Update Password</button>
+            <button className="btn btn-primary" onClick={handleUpdatePassword} disabled={loading}>
+              {loading ? 'Updating...' : 'Update Password'}
+            </button>
           </div>
 
           <div className="card">
@@ -315,7 +416,7 @@ function Settings() {
             <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
               Once you delete your account, there is no going back. Please be certain.
             </p>
-            <button className="btn btn-danger">Delete Account</button>
+            <button className="btn btn-danger" onClick={handleDeleteAccount} disabled={loading}>Delete Account</button>
           </div>
         </div>
       )}

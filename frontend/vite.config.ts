@@ -6,7 +6,43 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': {
+      '/matches': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/teams': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/friendships': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/notifications': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/chat': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/community': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/achievements': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/health': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },

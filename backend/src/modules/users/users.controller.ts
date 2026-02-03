@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Delete, Body } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Delete, Body, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 
@@ -24,6 +24,21 @@ export class UsersController {
   @Patch(':id')
   async update(@Param('id') id: number, @Body() updateData: Partial<User>): Promise<User> {
     return this.usersService.update(id, updateData);
+  }
+
+  @Patch(':id/notifications')
+  async updateNotifications(@Param('id') id: number, @Body() data: Record<string, boolean>) {
+    return this.usersService.updateNotifications(id, data);
+  }
+
+  @Patch(':id/privacy')
+  async updatePrivacy(@Param('id') id: number, @Body() data: Record<string, boolean>) {
+    return this.usersService.updatePrivacy(id, data);
+  }
+
+  @Post(':id/password')
+  async updatePassword(@Param('id') id: number, @Body() data: { current_password?: string; new_password: string }) {
+    return this.usersService.updatePassword(id, data);
   }
 
   @Delete(':id')

@@ -9,8 +9,8 @@ export interface CommunityPost {
   type?: string;
   created_at?: string;
   updated_at?: string;
-  // Relations (populated by backend)
-  author?: {
+  // Relations (populated by backend) - can be string (author name) or object
+  author?: string | {
     id: number;
     name: string;
     avatar?: string;
@@ -33,6 +33,16 @@ export interface UpdatePostData {
   title?: string;
   content?: string;
   type?: string;
+}
+
+export interface ReplyPostData {
+  user_id: number;
+  content: string;
+}
+
+export interface EventRegistrationData {
+  user_id: number;
+  event_id: number;
 }
 
 // Community API functions
@@ -60,6 +70,21 @@ export const communityService = {
   // Delete a post
   async deletePost(id: number): Promise<void> {
     return del(`/community/${id}`);
+  },
+
+  // Reply to a post
+  async replyToPost(id: number, data: ReplyPostData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/community/${id}/replies`, data);
+  },
+
+  // Register for an event
+  async registerEvent(data: EventRegistrationData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/community/events/register`, data);
+  },
+
+  // Join an event
+  async joinEvent(data: EventRegistrationData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/community/events/join`, data);
   },
 };
 

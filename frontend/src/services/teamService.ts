@@ -9,7 +9,7 @@ export interface Team {
   created_at?: string;
   updated_at?: string;
   // Additional fields for UI
-  members?: number;
+  members?: number | TeamMember[];
   captain?: string;
   wins?: number;
   losses?: number;
@@ -32,6 +32,11 @@ export interface UpdateTeamData {
   name?: string;
   sport?: string;
   captain_id?: number;
+}
+
+export interface JoinRequestData {
+  user_id: number;
+  message?: string;
 }
 
 // Team API functions
@@ -69,6 +74,21 @@ export const teamService = {
   // Delete a team
   async deleteTeam(id: number): Promise<void> {
     return del(`/teams/${id}`);
+  },
+
+  // Request to join a team
+  async requestJoin(teamId: number, data: JoinRequestData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/teams/${teamId}/join-requests`, data);
+  },
+
+  // Accept a team invite
+  async acceptInvite(inviteId: number): Promise<{ status: string }> {
+    return post<{ status: string }>(`/teams/invites/${inviteId}/accept`);
+  },
+
+  // Decline a team invite
+  async declineInvite(inviteId: number): Promise<{ status: string }> {
+    return post<{ status: string }>(`/teams/invites/${inviteId}/decline`);
   },
 };
 
