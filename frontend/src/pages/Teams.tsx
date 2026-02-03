@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { teamService, Team } from '../services/teamService';
+import CreateTeamModal, { CreateTeamFormData } from '../components/CreateTeamModal';
 
 function Teams() {
   const [activeTab, setActiveTab] = useState('my-teams');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,18 +51,19 @@ function Teams() {
     }
   }, [activeTab, fetchTeams]);
 
-  const handleCreateTeam = async () => {
-    setShowInviteModal(false);
-    const name = window.prompt('Team name?');
-    if (!name) return;
-    const sport = window.prompt('Sport (futsal, basketball, tennis)?', 'futsal') || 'futsal';
+  const handleCreateTeam = async (formData: CreateTeamFormData) => {
+    const userId = localStorage.getItem('userId');
     try {
-      await teamService.createTeam({ name, sport });
+      await teamService.createTeam({ 
+        name: formData.name, 
+        sport: formData.sport,
+        captain_id: userId ? parseInt(userId, 10) : undefined
+      });
       alert('Team created successfully.');
       fetchTeams();
     } catch (err) {
       console.error('Error creating team:', err);
-      alert('Failed to create team.');
+      throw err;
     }
   };
 
@@ -146,9 +149,8 @@ function Teams() {
   };
 
   const myTeams = teams.map((team) => {
-    const membersCount = Array.isArray((team as unknown as { members?: unknown }).members)
-      ? (team as unknown as { members?: unknown[] }).members?.length || 0
-      : team.members || 0;
+    const membersValue = team.members;
+    const membersCount = Array.isArray(membersValue) ? membersValue.length : (membersValue || 0);
     return {
       id: team.id,
       name: team.name,
@@ -165,7 +167,7 @@ function Teams() {
       <header className="header">
         <h1 className="header-title">Teams</h1>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={() => { setShowInviteModal(true); handleCreateTeam(); }}>
+          <button className="btn btn-primary" onClick={() => setShowCreateTeamModal(true)}>
             + Create Team
           </button>
         </div>
@@ -281,25 +283,30 @@ function Teams() {
           </div>
           <div className="card">
             {(discoverTeams.length ? discoverTeams : searchResults).map((team) => {
-              const memberCount = Array.isArray((team as unknown as { members?: unknown }).members)
-                ? (team as unknown as { members?: unknown[] }).members?.length || 0
-                : team.members || 0;
+              const membersValue = team.members;
+              const memberCount = Array.isArray(membersValue) ? membersValue.length : (membersValue || 0);
               return (
-              <div key={team.id} className="match-card">
-                <div>
-                  <strong>{team.name}</strong>
-                  <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{team.sport}</span>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    {memberCount} members | Rating: {team.rating}
+                <div key={team.id} className="match-card">
+                  <div>
+                    <strong>{team.name}</strong>
+                    <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{team.sport}</span>
+                    <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                      {memberCount} members | Rating: {team.rating}
+                    </div>
                   </div>
+                  <button className="btn btn-primary" onClick={() => handleRequestJoin(team.id)}>Request to Join</button>
                 </div>
-                <button className="btn btn-primary" onClick={() => handleRequestJoin(team.id)}>Request to Join</button>
-              </div>
-            );
+              );
             })}
           </div>
         </div>
       )}
+
+      <CreateTeamModal
+        isOpen={showCreateTeamModal}
+        onClose={() => setShowCreateTeamModal(false)}
+        onCreate={handleCreateTeam}
+      />
     </div>
   );
 }
