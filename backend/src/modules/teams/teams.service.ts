@@ -14,11 +14,11 @@ export class TeamsService {
   ) {}
 
   async findAll(): Promise<Team[]> {
-    return this.teamsRepository.find({ relations: ['captain', 'members'] });
+    return this.teamsRepository.find({ relations: ['captain', 'members', 'members.user'] });
   }
 
   async findOne(id: number): Promise<Team> {
-    const team = await this.teamsRepository.findOne({ where: { id }, relations: ['captain', 'members'] });
+    const team = await this.teamsRepository.findOne({ where: { id }, relations: ['captain', 'members', 'members.user'] });
     if (!team) {
       throw new NotFoundException(`Team with ID ${id} not found`);
     }
@@ -67,5 +67,13 @@ export class TeamsService {
 
   async declineInvite(inviteId: number): Promise<{ status: string; inviteId: number }> {
     return { status: 'invite_declined', inviteId };
+  }
+
+  async getTeamMembers(teamId: number): Promise<TeamMember[]> {
+    return this.teamMembersRepository.find({
+      where: { team_id: teamId },
+      relations: ['user'],
+      order: { joined_at: 'ASC' },
+    });
   }
 }

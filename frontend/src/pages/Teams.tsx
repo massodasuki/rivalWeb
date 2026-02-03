@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { teamService, Team } from '../services/teamService';
+import { teamService, Team, TeamMember } from '../services/teamService';
 import CreateTeamModal, { CreateTeamFormData } from '../components/CreateTeamModal';
 
 function Teams() {
   const [activeTab, setActiveTab] = useState('my-teams');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
+  const [showRosterModal, setShowRosterModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,12 +82,23 @@ function Teams() {
   const handleViewRoster = async (teamId: number) => {
     try {
       const team = await teamService.getTeam(teamId);
-      const memberCount = Array.isArray((team as unknown as { members?: unknown }).members)
-        ? (team as unknown as { members?: unknown[] }).members?.length || 0
-        : team.members || 0;
-      alert(`Team ${team.name} has ${memberCount} members.`);
+      const members = await teamService.getTeamMembers(teamId);
+      setSelectedTeam(team);
+      setTeamMembers(members);
+      setShowRosterModal(true);
     } catch (err) {
       console.error('Error loading roster:', err);
+      // Fallback to mock data
+      const mockTeam = teams.find(t => t.id === teamId);
+      if (mockTeam) {
+        setSelectedTeam(mockTeam);
+        setTeamMembers([
+          { id: 1, user_id: 1, role: 'captain', user: { id: 1, username: 'You' } },
+          { id: 2, user_id: 2, role: 'player', user: { id: 2, username: 'Player 2' } },
+          { id: 3, user_id: 3, role: 'player', user: { id: 3, username: 'Player 3' } },
+        ]);
+        setShowRosterModal(true);
+      }
     }
   };
 
@@ -307,6 +321,138 @@ function Teams() {
         onClose={() => setShowCreateTeamModal(false)}
         onCreate={handleCreateTeam}
       />
+
+      {/* Roster Modal */}
+      {showRosterModal && selectedTeam && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }} onClick={() => setShowRosterModal(false)}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '0', maxWidth: '420px', width: '90%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: 600 }}>{selectedTeam.name}</h2>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                    {selectedTeam.sport}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setShowRosterModal(false)} 
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'all 0.2s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Member Count */}
+            <div style={{ padding: '1rem 1.5rem', background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{teamMembers.length}</span> member{teamMembers.length !== 1 ? 's' : ''} in the team
+              </span>
+            </div>
+            
+            {/* Members List */}
+            <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '0.75rem' }}>
+              {teamMembers.map((member, index) => (
+                <div 
+                  key={member.id} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '1rem', 
+                    padding: '0.875rem 1rem',
+                    marginBottom: '0.25rem',
+                    borderRadius: '12px',
+                    transition: 'all 0.2s',
+                    background: member.role === 'captain' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 'transparent',
+                    border: member.role === 'captain' ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--hover-bg)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = member.role === 'captain' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 'transparent'; }}
+                >
+                  {/* Avatar */}
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: '12px', 
+                    background: member.role === 'captain' 
+                      ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
+                      : 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, white))',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontWeight: 600,
+                    fontSize: '1.125rem',
+                    boxShadow: member.role === 'captain' ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(59, 130, 246, 0.3)',
+                    flexShrink: 0
+                  }}>
+                    {member.user?.username?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                  
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                        {member.user?.username || `User ${member.user_id}`}
+                      </span>
+                      {member.role === 'captain' && (
+                        <span style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center',
+                          padding: '0.125rem 0.5rem', 
+                          background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                          color: 'white', 
+                          fontSize: '0.6875rem', 
+                          fontWeight: 600, 
+                          borderRadius: '9999px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.025em'
+                        }}>
+                          Captain
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      {member.role !== 'captain' && 'Team Member'}
+                    </div>
+                  </div>
+                  
+                  {/* Online indicator */}
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 2px var(--card-bg)' }}></div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Footer */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+              <button 
+                onClick={() => setShowRosterModal(false)}
+                style={{
+                  background: 'var(--primary)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

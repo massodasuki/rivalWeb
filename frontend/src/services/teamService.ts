@@ -20,6 +20,12 @@ export interface TeamMember {
   id?: number;
   user_id: number;
   role?: string;
+  joined_at?: string;
+  user?: {
+    id: number;
+    username?: string;
+    email?: string;
+  };
 }
 
 export interface CreateTeamData {
@@ -89,6 +95,11 @@ export const teamService = {
   // Decline a team invite
   async declineInvite(inviteId: number): Promise<{ status: string }> {
     return post<{ status: string }>(`/api/teams/invites/${inviteId}/decline`);
+  },
+
+  // Get team members
+  async getTeamMembers(teamId: number): Promise<TeamMember[]> {
+    return get<TeamMember[]>(`/api/teams/${teamId}/members`);
   },
 };
 

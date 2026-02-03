@@ -15,6 +15,11 @@ export class TeamsController {
     return this.teamsService.findOne(id);
   }
 
+  @Get(':id/members')
+  async getMembers(@Param('id') id: number) {
+    return this.teamsService.getTeamMembers(id);
+  }
+
   @Post()
   async create(@Body() data: { name: string; sport: string; captain_id?: number }) {
     return this.teamsService.create(data);
