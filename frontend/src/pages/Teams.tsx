@@ -324,23 +324,20 @@ function Teams() {
 
       {/* Roster Modal */}
       {showRosterModal && selectedTeam && (
-        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }} onClick={() => setShowRosterModal(false)}>
-          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '0', maxWidth: '420px', width: '90%', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowRosterModal(false)}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '0', maxWidth: '420px', width: '90%', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)' }} onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: 600 }}>{selectedTeam.name}</h2>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
-                    {selectedTeam.sport}
-                  </span>
+                  <h2 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: 600, color: '#111827' }}>{selectedTeam.name}</h2>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>{selectedTeam.sport}</span>
                 </div>
                 <button 
                   onClick={() => setShowRosterModal(false)} 
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'all 0.2s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                  style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'all 0.2s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = '#374151'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af'; }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6L6 18M6 6l12 12"/>
@@ -350,46 +347,44 @@ function Teams() {
             </div>
             
             {/* Member Count */}
-            <div style={{ padding: '1rem 1.5rem', background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{teamMembers.length}</span> member{teamMembers.length !== 1 ? 's' : ''} in the team
+            <div style={{ padding: '0.75rem 1.5rem', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#6b7280' }}>
+                <span style={{ color: '#111827', fontWeight: 600 }}>{teamMembers.length}</span> member{teamMembers.length !== 1 ? 's' : ''} in the team
               </span>
             </div>
             
             {/* Members List */}
-            <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '0.75rem' }}>
-              {teamMembers.map((member, index) => (
+            <div style={{ maxHeight: '320px', overflowY: 'auto', padding: '0.5rem' }}>
+              {teamMembers.map((member) => (
                 <div 
                   key={member.id} 
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '1rem', 
-                    padding: '0.875rem 1rem',
-                    marginBottom: '0.25rem',
-                    borderRadius: '12px',
+                    padding: '0.75rem 1rem',
+                    margin: '0.25rem',
+                    borderRadius: '8px',
                     transition: 'all 0.2s',
-                    background: member.role === 'captain' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 'transparent',
-                    border: member.role === 'captain' ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid transparent',
+                    background: member.role === 'captain' ? '#fef3c7' : 'transparent',
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--hover-bg)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = member.role === 'captain' ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 'transparent'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = member.role === 'captain' ? '#fef3c7' : 'transparent'; }}
                 >
                   {/* Avatar */}
                   <div style={{ 
-                    width: '48px', 
-                    height: '48px', 
-                    borderRadius: '12px', 
+                    width: '44px', 
+                    height: '44px', 
+                    borderRadius: '50%', 
                     background: member.role === 'captain' 
-                      ? 'linear-gradient(135deg, #f59e0b, #d97706)' 
-                      : 'linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, white))',
+                      ? '#f59e0b' 
+                      : '#3b82f6',
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
                     color: 'white', 
                     fontWeight: 600,
-                    fontSize: '1.125rem',
-                    boxShadow: member.role === 'captain' ? '0 4px 12px rgba(245, 158, 11, 0.3)' : '0 4px 12px rgba(59, 130, 246, 0.3)',
+                    fontSize: '1rem',
                     flexShrink: 0
                   }}>
                     {member.user?.username?.charAt(0).toUpperCase() || '?'}
@@ -398,54 +393,51 @@ function Teams() {
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#111827' }}>
                         {member.user?.username || `User ${member.user_id}`}
                       </span>
                       {member.role === 'captain' && (
                         <span style={{ 
                           display: 'inline-flex', 
-                          alignItems: 'center',
                           padding: '0.125rem 0.5rem', 
-                          background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                          background: '#f59e0b', 
                           color: 'white', 
                           fontSize: '0.6875rem', 
                           fontWeight: 600, 
                           borderRadius: '9999px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.025em'
                         }}>
                           Captain
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.8125rem', color: '#6b7280', marginTop: '0.125rem' }}>
                       {member.role !== 'captain' && 'Team Member'}
                     </div>
                   </div>
                   
                   {/* Online indicator */}
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 2px var(--card-bg)' }}></div>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }}></div>
                 </div>
               ))}
             </div>
             
             {/* Footer */}
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
               <button 
                 onClick={() => setShowRosterModal(false)}
                 style={{
-                  background: 'var(--primary)',
+                  background: '#3b82f6',
                   color: 'white',
                   border: 'none',
-                  padding: '0.75rem 2rem',
+                  padding: '0.625rem 2rem',
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   fontWeight: 500,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#2563eb'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#3b82f6'; }}
               >
                 Close
               </button>
