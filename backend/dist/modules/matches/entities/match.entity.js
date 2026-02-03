@@ -32,7 +32,7 @@ __decorate([
     __metadata("design:type", String)
 ], Match.prototype, "sport", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'geography', spatialFeatureType: 'Point', srid: 4326, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true }),
     __metadata("design:type", String)
 ], Match.prototype, "location", void 0);
 __decorate([

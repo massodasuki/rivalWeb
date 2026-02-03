@@ -29,7 +29,7 @@ export class Match {
   @Column({ length: 50 })
   sport: string;
 
-  @Column({ type: 'geography', spatialFeatureType: 'Point', srid: 4326, nullable: true })
+  @Column({ nullable: true, length: 500 })
   location: string;
 
   @Column({ name: 'scheduled_at', type: 'timestamp' })

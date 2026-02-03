@@ -5,7 +5,7 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     skill_level INT,
-    location GEOGRAPHY(POINT, 4326), -- latitude/longitude
+    location VARCHAR(500), -- latitude/longitude
     sport_preferences TEXT[],         -- array of sports
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -47,7 +47,7 @@ CREATE TABLE matches (
     home_team_name VARCHAR(100),
     away_team_name VARCHAR(100),
     sport VARCHAR(50) NOT NULL,
-    location GEOGRAPHY(POINT, 4326),
+    location VARCHAR(500),
     scheduled_at TIMESTAMP NOT NULL,
     status VARCHAR(20) DEFAULT 'pending', -- pending, confirmed, completed, cancelled
     max_players INT DEFAULT 10,

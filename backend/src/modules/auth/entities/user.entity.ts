@@ -26,7 +26,7 @@ export class User {
   @Column({ nullable: true })
   skill_level: number;
 
-  @Column({ type: 'geography', spatialFeatureType: 'Point', srid: 4326, nullable: true, name: 'location' })
+  @Column({ type: 'varchar', length: 500, nullable: true, name: 'location' })
   location: string;
 
   @Column({ type: 'text', array: true, nullable: true })
