@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const httpLogger = new Logger('HTTP');
   
   // Enable CORS for frontend requests
   app.enableCors({
@@ -16,6 +18,17 @@ async function bootstrap() {
     exposedHeaders: ['Access-Control-Allow-Origin'],
     preflightContinue: false,
   });
+
+  // Request/response logging
+  app.use((req: any, res: any, next: () => void) => {
+    const start = Date.now();
+    res.on('finish', () => {
+      const durationMs = Date.now() - start;
+      const url = req.originalUrl || req.url;
+      httpLogger.log(`${req.method} ${url} ${res.statusCode} ${durationMs}ms`);
+    });
+    next();
+  });
   
   // Configure ValidationPipe with whitelist (forbidNonWhitelisted disabled to allow additional fields)
   app.useGlobalPipes(new ValidationPipe({
@@ -24,6 +37,9 @@ async function bootstrap() {
     transform: true,
     disableErrorMessages: false,
   }));
+
+  // Error logging
+  app.useGlobalFilters(new AllExceptionsFilter());
   
   const port = configService.get('PORT') || process.env.PORT || 3001;
   await app.listen(port);

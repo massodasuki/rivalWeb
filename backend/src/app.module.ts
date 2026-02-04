@@ -30,6 +30,11 @@ import { HealthModule } from './modules/health/health.module';
       database: process.env.DB_DATABASE || 'rival_db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.DB_LOGGING
+        ? (process.env.DB_LOGGING.split(',') as any)
+        : process.env.NODE_ENV !== 'production'
+          ? ['error', 'warn', 'query']
+          : ['error'],
     }),
     RabbitmqModule,
     RedisModule,

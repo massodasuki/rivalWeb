@@ -25,6 +25,14 @@ const api: AxiosInstance = axios.create({
   timeout: 10000,
 });
 
+const logApi = (level: 'log' | 'error', message: string, meta?: unknown) => {
+  if (meta !== undefined) {
+    console[level](`[api] ${message}`, meta);
+  } else {
+    console[level](`[api] ${message}`);
+  }
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
@@ -32,22 +40,35 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    const method = (config.method || 'GET').toUpperCase();
+    logApi('log', `${method} ${config.baseURL || ''}${config.url || ''}`, {
+      params: config.params,
+      data: config.data,
+    });
     return config;
   },
   (error) => {
+    logApi('error', 'Request setup error', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    logApi('log', `Response ${response.status} ${response.config.url}`, response.data);
+    return response;
+  },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Handle unauthorized - redirect to login or refresh token
       localStorage.removeItem('authToken');
       // Could emit a logout event here
     }
+    logApi('error', `Response error ${error.response?.status || 'UNKNOWN'} ${error.config?.url || ''}`, {
+      data: error.response?.data,
+      message: error.message,
+    });
     return Promise.reject(error);
   }
 );
