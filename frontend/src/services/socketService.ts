@@ -3,14 +3,14 @@ import { io, Socket } from 'socket.io-client';
 // Socket instance singleton
 let socket: Socket | null = null;
 
-// Use environment variable or fallback to default (supports Docker and local dev)
+// Use environment variable or fallback to same-origin (supports proxy/nginx)
 const getBackendUrl = () => {
-  // Check for environment variable (set in .env or docker-compose)
-  if (import.meta.env.VITE_BACKEND_URL) {
-    return import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  if (backendUrl && backendUrl.trim() !== '') {
+    return backendUrl;
   }
-  // Default to localhost:3001 for local development
-  return 'http://localhost:3001';
+  // Empty string means same-origin (Vite proxy or Nginx)
+  return '';
 };
 
 // Get frontend URL for CORS
@@ -35,8 +35,9 @@ export const getSocket = (token?: string): Socket => {
   }
 
   const backendUrl = getBackendUrl();
-  
-  socket = io(`${backendUrl}/socket.io`, {
+  const socketUrl = backendUrl ? `${backendUrl}/socket.io` : '/socket.io';
+
+  socket = io(socketUrl, {
     auth: { token: token || localStorage.getItem('authToken') },
     transports: ['websocket', 'polling'],
     reconnection: true,

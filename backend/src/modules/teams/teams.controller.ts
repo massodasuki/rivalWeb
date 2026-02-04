@@ -3,7 +3,7 @@ import { TeamsService } from './teams.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 
-@Controller('api/teams')
+@Controller('teams')
 export class TeamsController {
   constructor(private teamsService: TeamsService) {}
 

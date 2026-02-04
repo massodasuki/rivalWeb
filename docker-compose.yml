@@ -137,7 +137,8 @@ services:
     container_name: rival-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:3001
+      VITE_API_URL:
+      VITE_BACKEND_URL:
     ports:
       - "3000:80"
     depends_on:
