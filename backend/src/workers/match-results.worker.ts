@@ -85,9 +85,6 @@ export class MatchResultsWorker implements OnModuleInit {
   }
 
   async enqueueMatchResult(payload: MatchResultPayload) {
-    await this.rabbitmqService.publishWithRoutingKey(
-      ROUTING_KEYS.MATCH_COMPLETED,
-      payload,
-    );
+    await this.rabbitmqService.publishToQueue(QUEUES.MATCH_RESULTS, payload);
   }
 }

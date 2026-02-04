@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MatchParticipant = void 0;
 const typeorm_1 = require("typeorm");
+const match_entity_1 = require("./match.entity");
 const user_entity_1 = require("../../auth/entities/user.entity");
 let MatchParticipant = class MatchParticipant {
 };
@@ -36,9 +37,9 @@ __decorate([
     __metadata("design:type", Date)
 ], MatchParticipant.prototype, "joined_at", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)('Match'),
+    (0, typeorm_1.ManyToOne)(() => match_entity_1.Match, match => match.participants),
     (0, typeorm_1.JoinColumn)({ name: 'match_id' }),
-    __metadata("design:type", Object)
+    __metadata("design:type", match_entity_1.Match)
 ], MatchParticipant.prototype, "match", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User),

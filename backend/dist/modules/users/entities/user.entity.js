@@ -35,7 +35,7 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "skill_level", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true, name: 'location' }),
     __metadata("design:type", String)
 ], User.prototype, "location", void 0);
 __decorate([
@@ -43,9 +43,25 @@ __decorate([
     __metadata("design:type", Array)
 ], User.prototype, "sport_preferences", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "avatar", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], User.prototype, "phone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, name: 'primary_sport' }),
+    __metadata("design:type", String)
+], User.prototype, "primary_sport", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)
 ], User.prototype, "created_at", void 0);
+__decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", Date)
+], User.prototype, "updated_at", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)('users')
 ], User);

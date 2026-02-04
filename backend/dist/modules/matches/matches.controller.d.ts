@@ -1,14 +1,20 @@
 import { MatchesService } from './matches.service';
 export declare class MatchesController {
     private matchesService;
+    private readonly logger;
     constructor(matchesService: MatchesService);
     findAll(): Promise<import("./entities/match.entity").Match[]>;
     findOne(id: number): Promise<import("./entities/match.entity").Match>;
     create(data: {
         home_team_id?: number;
         away_team_id?: number;
+        home_team?: string;
+        away_team?: string;
         sport: string;
         scheduled_at: string;
+        location?: string;
+        max_players?: number;
+        description?: string;
     }): Promise<import("./entities/match.entity").Match>;
     addParticipant(id: number, body: {
         user_id: number;

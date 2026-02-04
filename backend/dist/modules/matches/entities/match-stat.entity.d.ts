@@ -1,3 +1,4 @@
+import { Match } from './match.entity';
 import { User } from '../../auth/entities/user.entity';
 export declare class MatchStat {
     id: number;
@@ -6,6 +7,6 @@ export declare class MatchStat {
     goals: number;
     assists: number;
     rating: number;
-    match: any;
+    match: Match;
     user: User;
 }

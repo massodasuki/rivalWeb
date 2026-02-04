@@ -45,6 +45,25 @@ export interface JoinRequestData {
   message?: string;
 }
 
+// Team Invitation types
+export interface TeamInvitation {
+  id: number;
+  team_id: number;
+  invited_email: string;
+  inviter_id: number;
+  status: string; // pending, accepted, declined
+  created_at: string;
+  team?: Team;
+  inviter?: {
+    id: number;
+    username?: string;
+  };
+}
+
+export interface InviteByEmailData {
+  email: string;
+}
+
 // Team API functions
 export const teamService = {
   // Get all teams
@@ -82,9 +101,19 @@ export const teamService = {
     return del(`/api/teams/${id}`);
   },
 
-  // Request to join a team
-  async requestJoin(teamId: number, data: JoinRequestData): Promise<{ status: string }> {
-    return post<{ status: string }>(`/api/teams/${teamId}/join-requests`, data);
+  // Invite a user by email
+  async inviteByEmail(teamId: number, email: string): Promise<TeamInvitation> {
+    return post<TeamInvitation>(`/api/teams/${teamId}/invite-by-email`, { email });
+  },
+
+  // Get team invitations (pending)
+  async getTeamInvitations(teamId: number): Promise<TeamInvitation[]> {
+    return get<TeamInvitation[]>(`/api/teams/${teamId}/invitations`);
+  },
+
+  // Get user's pending invitations
+  async getUserInvitations(): Promise<TeamInvitation[]> {
+    return get<TeamInvitation[]>('/api/teams/user/invitations');
   },
 
   // Accept a team invite
@@ -95,6 +124,16 @@ export const teamService = {
   // Decline a team invite
   async declineInvite(inviteId: number): Promise<{ status: string }> {
     return post<{ status: string }>(`/api/teams/invites/${inviteId}/decline`);
+  },
+
+  // Cancel an invitation
+  async cancelInvitation(inviteId: number): Promise<{ status: string }> {
+    return del<{ status: string }>(`/api/teams/invites/${inviteId}`);
+  },
+
+  // Request to join a team
+  async requestJoin(teamId: number, data: JoinRequestData): Promise<{ status: string }> {
+    return post<{ status: string }>(`/api/teams/${teamId}/join-requests`, data);
   },
 
   // Get team members

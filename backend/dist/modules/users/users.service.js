@@ -17,9 +17,14 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./entities/user.entity");
+const match_participant_entity_1 = require("../matches/entities/match-participant.entity");
+const match_stat_entity_1 = require("../matches/entities/match-stat.entity");
+const bcrypt = require("bcryptjs");
 let UsersService = class UsersService {
-    constructor(usersRepository) {
+    constructor(usersRepository, matchParticipantsRepository, matchStatsRepository) {
         this.usersRepository = usersRepository;
+        this.matchParticipantsRepository = matchParticipantsRepository;
+        this.matchStatsRepository = matchStatsRepository;
     }
     async findAll() {
         return this.usersRepository.find();
@@ -30,6 +35,34 @@ let UsersService = class UsersService {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);
         }
         return user;
+    }
+    async findByEmail(email) {
+        return this.usersRepository.findOne({ where: { email } });
+    }
+    async getStats(id) {
+        const participations = await this.matchParticipantsRepository.find({
+            where: { user_id: id },
+            relations: ['match'],
+        });
+        const stats = await this.matchStatsRepository.find({
+            where: { user_id: id },
+        });
+        const matches = participations.length;
+        const wins = participations.filter(p => p.match?.status === 'completed').length;
+        const losses = matches - wins;
+        const goals = stats.reduce((sum, s) => sum + (s.goals || 0), 0);
+        const assists = stats.reduce((sum, s) => sum + (s.assists || 0), 0);
+        const rating = stats.length > 0
+            ? stats.reduce((sum, s) => sum + (s.rating || 0), 0) / stats.length
+            : 0;
+        return {
+            matches,
+            wins,
+            losses,
+            goals,
+            assists,
+            rating: Math.round(rating * 100) / 100,
+        };
     }
     async update(id, updateData) {
         await this.findOne(id);
@@ -42,11 +75,29 @@ let UsersService = class UsersService {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);
         }
     }
+    async updateNotifications(id, data) {
+        await this.findOne(id);
+        return { status: 'notifications_updated' };
+    }
+    async updatePrivacy(id, data) {
+        await this.findOne(id);
+        return { status: 'privacy_updated' };
+    }
+    async updatePassword(id, data) {
+        await this.findOne(id);
+        const password_hash = await bcrypt.hash(data.new_password, 10);
+        await this.usersRepository.update(id, { password_hash });
+        return { status: 'password_updated' };
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(match_participant_entity_1.MatchParticipant)),
+    __param(2, (0, typeorm_1.InjectRepository)(match_stat_entity_1.MatchStat)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

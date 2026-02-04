@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatMessage = void 0;
 const typeorm_1 = require("typeorm");
+const chat_room_entity_1 = require("./chat-room.entity");
 const user_entity_1 = require("../../auth/entities/user.entity");
 let ChatMessage = class ChatMessage {
 };
@@ -36,9 +37,9 @@ __decorate([
     __metadata("design:type", Date)
 ], ChatMessage.prototype, "created_at", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)('ChatRoom'),
+    (0, typeorm_1.ManyToOne)(() => chat_room_entity_1.ChatRoom, room => room.messages),
     (0, typeorm_1.JoinColumn)({ name: 'room_id' }),
-    __metadata("design:type", Object)
+    __metadata("design:type", chat_room_entity_1.ChatRoom)
 ], ChatMessage.prototype, "room", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User),

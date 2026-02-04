@@ -46,6 +46,16 @@ let CommunityService = class CommunityService {
             throw new common_1.NotFoundException(`Community post with ID ${id} not found`);
         }
     }
+    async reply(id, data) {
+        await this.findOne(id);
+        return { status: 'reply_received' };
+    }
+    async registerEvent(data) {
+        return { status: 'event_registered' };
+    }
+    async joinEvent(data) {
+        return { status: 'event_joined' };
+    }
 };
 exports.CommunityService = CommunityService;
 exports.CommunityService = CommunityService = __decorate([

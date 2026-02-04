@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Match = void 0;
 const typeorm_1 = require("typeorm");
 const team_entity_1 = require("../../teams/entities/team.entity");
+const match_participant_entity_1 = require("./match-participant.entity");
+const match_stat_entity_1 = require("./match-stat.entity");
 let Match = class Match {
 };
 exports.Match = Match;
@@ -28,11 +30,27 @@ __decorate([
     __metadata("design:type", Number)
 ], Match.prototype, "away_team_id", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'home_team_name', nullable: true, length: 100 }),
+    __metadata("design:type", String)
+], Match.prototype, "home_team_name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'away_team_name', nullable: true, length: 100 }),
+    __metadata("design:type", String)
+], Match.prototype, "away_team_name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'max_players', default: 10 }),
+    __metadata("design:type", Number)
+], Match.prototype, "max_players", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true, length: 500 }),
+    __metadata("design:type", String)
+], Match.prototype, "description", void 0);
+__decorate([
     (0, typeorm_1.Column)({ length: 50 }),
     __metadata("design:type", String)
 ], Match.prototype, "sport", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true, length: 500 }),
     __metadata("design:type", String)
 ], Match.prototype, "location", void 0);
 __decorate([
@@ -48,6 +66,10 @@ __decorate([
     __metadata("design:type", Date)
 ], Match.prototype, "created_at", void 0);
 __decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", Date)
+], Match.prototype, "updated_at", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => team_entity_1.Team, { nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'home_team_id' }),
     __metadata("design:type", team_entity_1.Team)
@@ -57,6 +79,14 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: 'away_team_id' }),
     __metadata("design:type", team_entity_1.Team)
 ], Match.prototype, "away_team", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => match_participant_entity_1.MatchParticipant, participant => participant.match),
+    __metadata("design:type", Array)
+], Match.prototype, "participants", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => match_stat_entity_1.MatchStat, stat => stat.match),
+    __metadata("design:type", Array)
+], Match.prototype, "stats", void 0);
 exports.Match = Match = __decorate([
     (0, typeorm_1.Entity)('matches')
 ], Match);

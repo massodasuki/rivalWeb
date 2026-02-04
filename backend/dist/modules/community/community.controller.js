@@ -28,6 +28,15 @@ let CommunityController = class CommunityController {
     async create(data) {
         return this.communityService.create(data);
     }
+    async reply(id, data) {
+        return this.communityService.reply(id, data);
+    }
+    async registerEvent(data) {
+        return this.communityService.registerEvent(data);
+    }
+    async joinEvent(data) {
+        return this.communityService.joinEvent(data);
+    }
     async update(id, data) {
         return this.communityService.update(id, data);
     }
@@ -56,6 +65,28 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], CommunityController.prototype, "create", null);
+__decorate([
+    (0, common_1.Post)(':id/replies'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], CommunityController.prototype, "reply", null);
+__decorate([
+    (0, common_1.Post)('events/register'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CommunityController.prototype, "registerEvent", null);
+__decorate([
+    (0, common_1.Post)('events/join'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CommunityController.prototype, "joinEvent", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),

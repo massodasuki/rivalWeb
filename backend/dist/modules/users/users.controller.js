@@ -25,8 +25,20 @@ let UsersController = class UsersController {
     async findOne(id) {
         return this.usersService.findOne(id);
     }
+    async getStats(id) {
+        return this.usersService.getStats(id);
+    }
     async update(id, updateData) {
         return this.usersService.update(id, updateData);
+    }
+    async updateNotifications(id, data) {
+        return this.usersService.updateNotifications(id, data);
+    }
+    async updatePrivacy(id, data) {
+        return this.usersService.updatePrivacy(id, data);
+    }
+    async updatePassword(id, data) {
+        return this.usersService.updatePassword(id, data);
     }
     async remove(id) {
         return this.usersService.remove(id);
@@ -47,6 +59,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.Get)(':id/stats'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getStats", null);
+__decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -54,6 +73,30 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "update", null);
+__decorate([
+    (0, common_1.Patch)(':id/notifications'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateNotifications", null);
+__decorate([
+    (0, common_1.Patch)(':id/privacy'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updatePrivacy", null);
+__decorate([
+    (0, common_1.Post)(':id/password'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updatePassword", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),

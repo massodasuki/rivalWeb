@@ -13,6 +13,7 @@ exports.Team = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../auth/entities/user.entity");
 const team_member_entity_1 = require("./team-member.entity");
+const team_invitation_entity_1 = require("./team-invitation.entity");
 let Team = class Team {
 };
 exports.Team = Team;
@@ -37,6 +38,10 @@ __decorate([
     __metadata("design:type", Date)
 ], Team.prototype, "created_at", void 0);
 __decorate([
+    (0, typeorm_1.UpdateDateColumn)({ name: 'updated_at' }),
+    __metadata("design:type", Date)
+], Team.prototype, "updated_at", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => user_entity_1.User, { nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'captain_id' }),
     __metadata("design:type", user_entity_1.User)
@@ -45,6 +50,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => team_member_entity_1.TeamMember, teamMember => teamMember.team),
     __metadata("design:type", Array)
 ], Team.prototype, "members", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => team_invitation_entity_1.TeamInvitation, invitation => invitation.team),
+    __metadata("design:type", Array)
+], Team.prototype, "invitations", void 0);
 exports.Team = Team = __decorate([
     (0, typeorm_1.Entity)('teams')
 ], Team);

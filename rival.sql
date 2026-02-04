@@ -39,6 +39,17 @@ CREATE TABLE team_members (
     UNIQUE(team_id, user_id)
 );
 
+-- TEAM INVITATIONS
+CREATE TABLE team_invitations (
+    id SERIAL PRIMARY KEY,
+    team_id INT REFERENCES teams(id) ON DELETE CASCADE,
+    invited_email VARCHAR(100) NOT NULL,
+    inviter_id INT REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending', -- pending, accepted, declined
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(team_id, invited_email, status)
+);
+
 -- MATCHES
 CREATE TABLE matches (
     id SERIAL PRIMARY KEY,

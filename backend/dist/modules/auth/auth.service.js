@@ -26,6 +26,12 @@ let AuthService = class AuthService {
     }
     async register(registerDto) {
         const { password, ...rest } = registerDto;
+        const existingUser = await this.usersRepository.findOne({
+            where: { email: registerDto.email }
+        });
+        if (existingUser) {
+            throw new common_1.ConflictException('An account with this email already exists');
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = this.usersRepository.create({
             ...rest,
@@ -38,7 +44,7 @@ let AuthService = class AuthService {
     async login(loginDto) {
         const user = await this.usersRepository.findOne({ where: { email: loginDto.email } });
         if (!user || !(await bcrypt.compare(loginDto.password, user.password_hash))) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
+            throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const access_token = this.jwtService.sign({ sub: user.id, email: user.email });
         return { access_token, user };

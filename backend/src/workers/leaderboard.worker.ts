@@ -54,10 +54,7 @@ export class LeaderboardWorker implements OnModuleInit {
   }
 
   async enqueueLeaderboardUpdate(payload: LeaderboardUpdatePayload) {
-    await this.rabbitmqService.publishWithRoutingKey(
-      ROUTING_KEYS.LEADERBOARD_UPDATE,
-      payload,
-    );
+    await this.rabbitmqService.publishToQueue(QUEUES.LEADERBOARD_CACHE, payload);
   }
 
   async refreshLeaderboard(sport?: string) {

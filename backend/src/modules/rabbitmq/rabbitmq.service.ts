@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { ChannelModel, Channel } from 'amqplib';
-import { QUEUES, ROUTING_KEYS } from '../../common/constants/queues';
+import { QUEUES, ROUTING_KEYS, EXCHANGES } from '../../common/constants/queues';
 
 @Injectable()
 export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
@@ -20,19 +20,52 @@ export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
   private async connect() {
     try {
       const url = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
+      this.logger.log(`Connecting to RabbitMQ: ${url}`);
+      
       this.connection = await amqp.connect(url);
+      this.logger.log('RabbitMQ connection established');
+      
+      // Set up connection error handlers FIRST
+      this.connection.on('error', (err) => {
+        this.logger.error('RabbitMQ connection error:', err);
+      });
+      
+      this.connection.on('close', () => {
+        this.logger.warn('RabbitMQ connection closed');
+      });
+      
       this.channel = await this.connection.createChannel();
+      this.logger.log('RabbitMQ channel created');
+
+      // Set up channel error handlers IMMEDIATELY after creating channel
+      this.channel.on('error', (err) => {
+        this.logger.error('RabbitMQ channel error:', err);
+      });
+
+      this.channel.on('close', () => {
+        this.logger.warn('RabbitMQ channel closed');
+      });
 
       // Assert queues
+      this.logger.log('Asserting queues...');
       await this.channel.assertQueue(QUEUES.NOTIFICATIONS, { durable: true });
       await this.channel.assertQueue(QUEUES.TEAM_INVITES, { durable: true });
       await this.channel.assertQueue(QUEUES.MATCH_INVITES, { durable: true });
       await this.channel.assertQueue(QUEUES.LEADERBOARD_CACHE, { durable: true });
       await this.channel.assertQueue(QUEUES.MATCH_RESULTS, { durable: true });
+      this.logger.log('Queues asserted');
+
+      // Assert exchange
+      this.logger.log(`Asserting exchange: ${EXCHANGES.NOTIFICATIONS}`);
+      await this.channel.assertExchange(EXCHANGES.NOTIFICATIONS, 'topic', { durable: true });
 
       // Bind queues to exchange
-      await this.channel.bindQueue(QUEUES.NOTIFICATIONS, '', ROUTING_KEYS.TEAM_INVITE);
-      await this.channel.bindQueue(QUEUES.NOTIFICATIONS, '', ROUTING_KEYS.MATCH_INVITE);
+      this.logger.log('Binding queues to exchange...');
+      await this.channel.bindQueue(QUEUES.NOTIFICATIONS, EXCHANGES.NOTIFICATIONS, ROUTING_KEYS.TEAM_INVITE);
+      await this.channel.bindQueue(QUEUES.NOTIFICATIONS, EXCHANGES.NOTIFICATIONS, ROUTING_KEYS.MATCH_INVITE);
+      await this.channel.bindQueue(QUEUES.LEADERBOARD_CACHE, EXCHANGES.NOTIFICATIONS, ROUTING_KEYS.LEADERBOARD_UPDATE);
+      await this.channel.bindQueue(QUEUES.MATCH_RESULTS, EXCHANGES.NOTIFICATIONS, ROUTING_KEYS.MATCH_COMPLETED);
+      this.logger.log('Queues bound to exchange');
 
       this.logger.log('Connected to RabbitMQ');
     } catch (error) {
@@ -63,7 +96,7 @@ export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
 
   async publishWithRoutingKey(routingKey: string, message: any) {
     try {
-      this.channel.publish('', routingKey, Buffer.from(JSON.stringify(message)), {
+      this.channel.publish(EXCHANGES.NOTIFICATIONS, routingKey, Buffer.from(JSON.stringify(message)), {
         persistent: true,
       });
       this.logger.debug(`Message published with routing key: ${routingKey}`);

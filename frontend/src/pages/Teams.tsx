@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { teamService, Team, TeamMember } from '../services/teamService';
+import { teamService, Team, TeamMember, TeamInvitation } from '../services/teamService';
 import CreateTeamModal, { CreateTeamFormData } from '../components/CreateTeamModal';
+import InvitePlayerModal from '../components/InvitePlayerModal';
 
 function Teams() {
   const [activeTab, setActiveTab] = useState('my-teams');
@@ -8,20 +9,17 @@ function Teams() {
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [showRosterModal, setShowRosterModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [invitingTeam, setInvitingTeam] = useState<Team | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<TeamInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchSport, setSearchSport] = useState('');
   const [discoverTeams, setDiscoverTeams] = useState<Team[]>([]);
 
-  // Mock data for invites and search results
-  const pendingInvites = [
-    { id: 1, team: 'Elite FC', sport: 'Futsal', from: 'John Doe', time: '2 hours ago' },
-    { id: 2, team: 'Quick Players', sport: 'Basketball', from: 'Jane Smith', time: '1 day ago' },
-  ];
-
+  // Mock data for search results
   const searchResults = [
     { id: 1, name: 'Pro Team Alpha', sport: 'Futsal', members: 10, rating: 4.5 },
     { id: 2, name: 'Amateur United', sport: 'Basketball', members: 6, rating: 3.8 },
@@ -48,25 +46,49 @@ function Teams() {
     }
   }, []);
 
+  // Fetch user invitations
+  const fetchUserInvitations = useCallback(async () => {
+    try {
+      const invites = await teamService.getUserInvitations();
+      setPendingInvites(invites);
+    } catch (err) {
+      console.error('Error fetching invitations:', err);
+      // Fallback to mock data
+      setPendingInvites([
+        { id: 1, team_id: 1, invited_email: 'user@example.com', inviter_id: 1, status: 'pending', created_at: new Date().toISOString(), team: { id: 1, name: 'Elite FC', sport: 'Futsal' }, inviter: { id: 1, username: 'John Doe' } },
+        { id: 2, team_id: 2, invited_email: 'user@example.com', inviter_id: 2, status: 'pending', created_at: new Date().toISOString(), team: { id: 2, name: 'Quick Players', sport: 'Basketball' }, inviter: { id: 2, username: 'Jane Smith' } },
+      ]);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'my-teams') {
       fetchTeams();
+    } else if (activeTab === 'invites') {
+      fetchUserInvitations();
     }
-  }, [activeTab, fetchTeams]);
+  }, [activeTab, fetchTeams, fetchUserInvitations]);
 
   const handleCreateTeam = async (formData: CreateTeamFormData) => {
     const userId = localStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('You must be logged in to create a team. Please log in first.');
+    }
     try {
-      await teamService.createTeam({ 
+      const teamData = { 
         name: formData.name, 
         sport: formData.sport,
-        captain_id: userId ? parseInt(userId, 10) : undefined
-      });
-      alert('Team created successfully.');
+        captain_id: parseInt(userId, 10)
+      };
+      console.log('Creating team with data:', teamData);
+      const response = await teamService.createTeam(teamData);
+      console.log('Team created successfully:', response);
+      alert('Team created successfully!');
       fetchTeams();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating team:', err);
-      throw err;
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create team. Please try again.';
+      throw new Error(errorMessage);
     }
   };
 
@@ -102,25 +124,20 @@ function Teams() {
     }
   };
 
-  const handleInvitePlayers = async (teamId: number) => {
-    const userIdInput = window.prompt('User ID to invite?');
-    if (!userIdInput) return;
-    try {
-      await teamService.addMember(teamId, { user_id: parseInt(userIdInput, 10), role: 'player' });
-      alert('Player invited.');
-    } catch (err) {
-      console.error('Error inviting player:', err);
-      alert('Failed to invite player.');
-    }
+  const handleInvitePlayers = (team: Team) => {
+    setInvitingTeam(team);
+    setShowInviteModal(true);
   };
 
   const handleAcceptInvite = async (inviteId: number) => {
     try {
       await teamService.acceptInvite(inviteId);
-      alert('Invite accepted.');
-    } catch (err) {
+      alert('Invite accepted! You are now a member of the team.');
+      fetchUserInvitations();
+      fetchTeams();
+    } catch (err: any) {
       console.error('Error accepting invite:', err);
-      alert('Failed to accept invite.');
+      alert(err.response?.data?.message || 'Failed to accept invite.');
     }
   };
 
@@ -128,9 +145,10 @@ function Teams() {
     try {
       await teamService.declineInvite(inviteId);
       alert('Invite declined.');
-    } catch (err) {
+      fetchUserInvitations();
+    } catch (err: any) {
       console.error('Error declining invite:', err);
-      alert('Failed to decline invite.');
+      alert(err.response?.data?.message || 'Failed to decline invite.');
     }
   };
 
@@ -175,6 +193,20 @@ function Teams() {
       losses: team.losses || 0,
     };
   });
+
+  // Format time ago helper
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="teams">
@@ -238,7 +270,7 @@ function Teams() {
                   </div>
                   <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
                     <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => handleViewRoster(team.id)}>View Roster</button>
-                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => handleInvitePlayers(team.id)}>Invite Players</button>
+                    <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => handleInvitePlayers(team)}>Invite Players</button>
                   </div>
                 </div>
               ))}
@@ -262,10 +294,10 @@ function Teams() {
             pendingInvites.map((invite) => (
               <div key={invite.id} className="match-card">
                 <div>
-                  <strong>{invite.team}</strong>
-                  <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{invite.sport}</span>
+                  <strong>{invite.team?.name || 'Unknown Team'}</strong>
+                  <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{invite.team?.sport || 'Unknown'}</span>
                   <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    Invited by {invite.from} - {invite.time}
+                    Invited by {invite.inviter?.username || 'Unknown'} - {formatTimeAgo(invite.created_at)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -320,6 +352,17 @@ function Teams() {
         isOpen={showCreateTeamModal}
         onClose={() => setShowCreateTeamModal(false)}
         onCreate={handleCreateTeam}
+      />
+
+      <InvitePlayerModal
+        isOpen={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false);
+          setInvitingTeam(null);
+        }}
+        teamId={invitingTeam?.id || 0}
+        teamName={invitingTeam?.name || ''}
+        onInviteSent={fetchTeams}
       />
 
       {/* Roster Modal */}

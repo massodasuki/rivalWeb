@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { TeamMember } from './team-member.entity';
+import { TeamInvitation } from './team-invitation.entity';
 
 @Entity('teams')
 export class Team {
@@ -28,4 +29,7 @@ export class Team {
 
   @OneToMany(() => TeamMember, teamMember => teamMember.team)
   members: TeamMember[];
+
+  @OneToMany(() => TeamInvitation, invitation => invitation.team)
+  invitations: TeamInvitation[];
 }

@@ -10,6 +10,24 @@ export declare class CommunityController {
         content?: string;
         type?: string;
     }): Promise<import("./entities/community-post.entity").CommunityPost>;
+    reply(id: number, data: {
+        user_id: number;
+        content: string;
+    }): Promise<{
+        status: string;
+    }>;
+    registerEvent(data: {
+        user_id: number;
+        event_id: number;
+    }): Promise<{
+        status: string;
+    }>;
+    joinEvent(data: {
+        user_id: number;
+        event_id: number;
+    }): Promise<{
+        status: string;
+    }>;
     update(id: number, data: Partial<{
         title: string;
         content: string;

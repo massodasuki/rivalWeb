@@ -58,8 +58,10 @@ export default function CreateTeamModal({ isOpen, onClose, onCreate }: CreateTea
         sport: 'Futsal',
         description: '',
       });
-    } catch (err) {
-      setError('Failed to create team. Please try again.');
+    } catch (err: any) {
+      // Show the actual error message from the backend
+      const errorMessage = err.message || 'Failed to create team. Please try again.';
+      setError(errorMessage);
       console.error('Error creating team:', err);
     } finally {
       setLoading(false);

@@ -19,6 +19,11 @@ const notifications_module_1 = require("./modules/notifications/notifications.mo
 const chat_module_1 = require("./modules/chat/chat.module");
 const community_module_1 = require("./modules/community/community.module");
 const achievements_module_1 = require("./modules/achievements/achievements.module");
+const socket_module_1 = require("./modules/socket/socket.module");
+const rabbitmq_module_1 = require("./modules/rabbitmq/rabbitmq.module");
+const redis_module_1 = require("./modules/redis/redis.module");
+const workers_module_1 = require("./workers/workers.module");
+const health_module_1 = require("./modules/health/health.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,6 +43,8 @@ exports.AppModule = AppModule = __decorate([
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: process.env.NODE_ENV !== 'production',
             }),
+            rabbitmq_module_1.RabbitmqModule,
+            redis_module_1.RedisModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             friendships_module_1.FriendshipsModule,
@@ -47,6 +54,9 @@ exports.AppModule = AppModule = __decorate([
             chat_module_1.ChatModule,
             community_module_1.CommunityModule,
             achievements_module_1.AchievementsModule,
+            socket_module_1.SocketModule,
+            workers_module_1.WorkersModule,
+            health_module_1.HealthModule,
         ],
     })
 ], AppModule);

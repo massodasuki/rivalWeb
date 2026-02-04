@@ -44,7 +44,7 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "skill_level", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 500, nullable: true, name: 'location' }),
     __metadata("design:type", String)
 ], User.prototype, "location", void 0);
 __decorate([

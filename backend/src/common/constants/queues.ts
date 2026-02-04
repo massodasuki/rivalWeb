@@ -6,6 +6,10 @@ export const QUEUES = {
   MATCH_RESULTS: 'match-results',
 } as const;
 
+export const EXCHANGES = {
+  NOTIFICATIONS: 'notifications-exchange',
+} as const;
+
 export const ROUTING_KEYS = {
   TEAM_INVITE: 'notification.team.invite',
   MATCH_INVITE: 'notification.match.invite',

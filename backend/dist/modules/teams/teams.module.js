@@ -13,12 +13,17 @@ const teams_service_1 = require("./teams.service");
 const teams_controller_1 = require("./teams.controller");
 const team_entity_1 = require("./entities/team.entity");
 const team_member_entity_1 = require("./entities/team-member.entity");
+const team_invitation_entity_1 = require("./entities/team-invitation.entity");
+const users_module_1 = require("../users/users.module");
 let TeamsModule = class TeamsModule {
 };
 exports.TeamsModule = TeamsModule;
 exports.TeamsModule = TeamsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([team_entity_1.Team, team_member_entity_1.TeamMember])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([team_entity_1.Team, team_member_entity_1.TeamMember, team_invitation_entity_1.TeamInvitation]),
+            users_module_1.UsersModule,
+        ],
         controllers: [teams_controller_1.TeamsController],
         providers: [teams_service_1.TeamsService],
         exports: [teams_service_1.TeamsService],

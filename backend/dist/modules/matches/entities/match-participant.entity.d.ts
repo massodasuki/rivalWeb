@@ -1,3 +1,4 @@
+import { Match } from './match.entity';
 import { User } from '../../auth/entities/user.entity';
 export declare class MatchParticipant {
     id: number;
@@ -5,6 +6,6 @@ export declare class MatchParticipant {
     user_id: number;
     role: string;
     joined_at: Date;
-    match: any;
+    match: Match;
     user: User;
 }

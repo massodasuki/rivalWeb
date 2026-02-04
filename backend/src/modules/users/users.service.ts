@@ -29,6 +29,10 @@ export class UsersService {
     return user;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
   async getStats(id: number) {
     const participations = await this.matchParticipantsRepository.find({
       where: { user_id: id },
