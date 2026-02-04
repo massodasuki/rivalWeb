@@ -42,6 +42,11 @@ exports.AppModule = AppModule = __decorate([
                 database: process.env.DB_DATABASE || 'rival_db',
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: process.env.NODE_ENV !== 'production',
+                logging: process.env.DB_LOGGING
+                    ? process.env.DB_LOGGING.split(',')
+                    : process.env.NODE_ENV !== 'production'
+                        ? ['error', 'warn', 'query']
+                        : ['error'],
             }),
             rabbitmq_module_1.RabbitmqModule,
             redis_module_1.RedisModule,

@@ -192,7 +192,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamsController.prototype, "remove", null);
 exports.TeamsController = TeamsController = __decorate([
-    (0, common_1.Controller)('api/teams'),
+    (0, common_1.Controller)('teams'),
     __metadata("design:paramtypes", [teams_service_1.TeamsService])
 ], TeamsController);
 //# sourceMappingURL=teams.controller.js.map
