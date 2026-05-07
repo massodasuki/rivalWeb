@@ -8,19 +8,22 @@ export declare class RedisService implements OnModuleInit, OnModuleDestroy {
     getClient(): Redis;
     setLeaderboard(leaderboard: any[]): Promise<void>;
     getLeaderboard(): Promise<any[] | null>;
+    invalidateLeaderboard(): Promise<void>;
     updateLeaderboardEntry(userId: string, score: number): Promise<void>;
-    getTopLeaderboard(limit?: number): Promise<any[]>;
+    getTopLeaderboard(limit?: number): Promise<{
+        userId: string;
+        score: number;
+    }[]>;
     setUpcomingMatches(matches: any[]): Promise<void>;
     getUpcomingMatches(): Promise<any[] | null>;
+    invalidateUpcomingMatches(): Promise<void>;
     setUserStats(userId: string, stats: any): Promise<void>;
     getUserStats(userId: string): Promise<any | null>;
+    invalidateUserStats(userId: string): Promise<void>;
     setTeamStats(teamId: string, stats: any): Promise<void>;
     getTeamStats(teamId: string): Promise<any | null>;
+    invalidateTeamStats(teamId: string): Promise<void>;
     setMatchResults(matchId: string, results: any): Promise<void>;
     getMatchResults(matchId: string): Promise<any | null>;
-    invalidateLeaderboard(): Promise<void>;
-    invalidateUpcomingMatches(): Promise<void>;
-    invalidateUserStats(userId: string): Promise<void>;
-    invalidateTeamStats(teamId: string): Promise<void>;
     invalidateMatchResults(matchId: string): Promise<void>;
 }

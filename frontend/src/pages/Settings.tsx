@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { userService } from '../services/userService';
-import authService from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 function Settings() {
+  const { user: authUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [notifications, setNotifications] = useState({
     email: true,
@@ -23,36 +24,38 @@ function Settings() {
     confirm: '',
   });
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  // Mock user from auth context/API data (would come from real API)
+  // Initialize with empty strings — populated from API
   const [userData, setUserData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
-    location: 'New York, NY',
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
     primarySport: 'futsal',
     skillLevel: '3',
   });
 
-  // Fetch user data from API (optional)
+  // Fetch user data from API on mount
   const fetchUserData = async () => {
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        const user = await userService.getUser(parseInt(userId, 10));
-        setUserData({
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-          location: user.location || '',
-          primarySport: user.primary_sport || 'futsal',
-          skillLevel: String(user.skill_level || 3),
-        });
-      }
+      setFetchError(null);
+      const user = await userService.getUser(userId);
+      setUserData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        location: user.location || '',
+        primarySport: user.primary_sport || 'futsal',
+        skillLevel: String(user.skill_level || 3),
+      });
     } catch (err) {
       console.error('Error fetching user data:', err);
+      setFetchError('Failed to load profile. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -60,65 +63,56 @@ function Settings() {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
 
   const handleSaveProfile = async () => {
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await userService.updateUser(parseInt(userId, 10), {
-          name: userData.name,
-          email: userData.email,
-          phone: userData.phone,
-          location: userData.location,
-          primary_sport: userData.primarySport,
-          skill_level: parseInt(userData.skillLevel, 10),
-        });
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
-      }
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      // Simulate save for demo
+      await userService.updateUser(userId, {
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        location: userData.location,
+        primary_sport: userData.primarySport,
+        skill_level: parseInt(userData.skillLevel, 10),
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Error saving profile:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveNotifications = async () => {
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await userService.updateNotifications(parseInt(userId, 10), notifications);
-      }
+      await userService.updateNotifications(userId, notifications);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Error saving notifications:', err);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSavePrivacy = async () => {
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await userService.updatePrivacy(parseInt(userId, 10), privacy);
-      }
+      await userService.updatePrivacy(userId, privacy);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error('Error saving privacy:', err);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
     } finally {
       setLoading(false);
     }
@@ -129,20 +123,23 @@ function Settings() {
       alert('New password and confirm password must match.');
       return;
     }
+    if (!passwords.current) {
+      alert('Please enter your current password.');
+      return;
+    }
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await userService.updatePassword(parseInt(userId, 10), {
-          current_password: passwords.current,
-          new_password: passwords.next,
-        });
-        setPasswords({ current: '', next: '', confirm: '' });
-        alert('Password updated.');
-      }
-    } catch (err) {
+      await userService.updatePassword(userId, {
+        current_password: passwords.current,
+        new_password: passwords.next,
+      });
+      setPasswords({ current: '', next: '', confirm: '' });
+      alert('Password updated.');
+    } catch (err: any) {
       console.error('Error updating password:', err);
-      alert('Failed to update password.');
+      alert(err.response?.data?.message || 'Failed to update password. Check your current password.');
     } finally {
       setLoading(false);
     }
@@ -150,15 +147,12 @@ function Settings() {
 
   const handleDeleteAccount = async () => {
     if (!window.confirm('Delete your account permanently?')) return;
+    const userId = authUser?.id;
+    if (!userId) return;
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        await userService.deleteUser(parseInt(userId, 10));
-      }
-      authService.logout();
-      alert('Account deleted.');
-      window.location.href = '/';
+      await userService.deleteUser(userId);
+      logout();
     } catch (err) {
       console.error('Error deleting account:', err);
       alert('Failed to delete account.');
@@ -172,6 +166,12 @@ function Settings() {
       <header className="header">
         <h1 className="header-title">Settings</h1>
       </header>
+
+      {fetchError && (
+        <div className="card" style={{ marginBottom: '1rem', padding: '1rem', color: 'var(--danger)', background: 'var(--danger-light, #fee2e2)', borderRadius: '0.5rem' }}>
+          {fetchError}
+        </div>
+      )}
 
       <div className="tabs">
         <button className={`tab ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab('profile')}>

@@ -23,7 +23,7 @@ export interface TeamMember {
   joined_at?: string;
   user?: {
     id: number;
-    username?: string;
+    name?: string;   // backend User entity uses 'name', not 'username'
     email?: string;
   };
 }
@@ -56,7 +56,7 @@ export interface TeamInvitation {
   team?: Team;
   inviter?: {
     id: number;
-    username?: string;
+    name?: string;   // backend User entity uses 'name', not 'username'
   };
 }
 

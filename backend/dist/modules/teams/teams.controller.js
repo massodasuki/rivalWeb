@@ -23,6 +23,10 @@ let TeamsController = class TeamsController {
     async findAll() {
         return this.teamsService.findAll();
     }
+    async getUserInvitations(req) {
+        const user = req.user;
+        return this.teamsService.getUserInvitations(user.email);
+    }
     async findOne(id) {
         return this.teamsService.findOne(id);
     }
@@ -31,10 +35,6 @@ let TeamsController = class TeamsController {
     }
     async getTeamInvitations(id) {
         return this.teamsService.getTeamInvitations(id);
-    }
-    async getUserInvitations(req) {
-        const user = req.user;
-        return this.teamsService.getUserInvitations(user.email);
     }
     async create(data) {
         return this.teamsService.create(data);
@@ -79,6 +79,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TeamsController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('user/invitations'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], TeamsController.prototype, "getUserInvitations", null);
+__decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -99,14 +107,6 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TeamsController.prototype, "getTeamInvitations", null);
-__decorate([
-    (0, common_1.Get)('user/invitations'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    __param(0, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], TeamsController.prototype, "getUserInvitations", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),

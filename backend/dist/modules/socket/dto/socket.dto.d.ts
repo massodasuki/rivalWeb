@@ -34,6 +34,7 @@ export declare class SendMatchInvitationDto {
 }
 export declare class RespondMatchInvitationDto {
     invitationId: number;
+    inviterId: number;
     response: 'accept' | 'decline' | 'counter';
     counterDate?: Date;
     reason?: string;
@@ -63,6 +64,7 @@ export declare class SendTeamInvitationDto {
 }
 export declare class RespondTeamInvitationDto {
     invitationId: number;
+    inviterId: number;
     response: 'accept' | 'decline';
     reason?: string;
 }

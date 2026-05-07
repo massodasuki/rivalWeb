@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatController = void 0;
 const common_1 = require("@nestjs/common");
 const chat_service_1 = require("./chat.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let ChatController = class ChatController {
     constructor(chatService) {
         this.chatService = chatService;
@@ -81,6 +82,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ChatController.prototype, "removeRoom", null);
 exports.ChatController = ChatController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('chat'),
     __metadata("design:paramtypes", [chat_service_1.ChatService])
 ], ChatController);

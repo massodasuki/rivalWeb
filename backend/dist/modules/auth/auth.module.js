@@ -15,7 +15,7 @@ const config_1 = require("@nestjs/config");
 const auth_service_1 = require("./auth.service");
 const auth_controller_1 = require("./auth.controller");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
-const user_entity_1 = require("./entities/user.entity");
+const user_entity_1 = require("../users/entities/user.entity");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -26,10 +26,18 @@ exports.AuthModule = AuthModule = __decorate([
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
-                    secret: configService.get('JWT_SECRET') || 'your-secret-key',
-                    signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') || '1h' },
-                }),
+                useFactory: async (configService) => {
+                    const secret = configService.get('JWT_SECRET');
+                    if (!secret) {
+                        throw new Error('JWT_SECRET environment variable is required but not set');
+                    }
+                    return {
+                        secret,
+                        signOptions: {
+                            expiresIn: configService.get('JWT_EXPIRES_IN') || '7d',
+                        },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
         ],

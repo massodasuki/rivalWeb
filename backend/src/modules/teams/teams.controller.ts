@@ -12,6 +12,14 @@ export class TeamsController {
     return this.teamsService.findAll();
   }
 
+  // Static routes MUST come before parameterized :id routes
+  @Get('user/invitations')
+  @UseGuards(JwtAuthGuard)
+  async getUserInvitations(@Req() req: Request) {
+    const user = (req as any).user;
+    return this.teamsService.getUserInvitations(user.email);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return this.teamsService.findOne(id);
@@ -25,13 +33,6 @@ export class TeamsController {
   @Get(':id/invitations')
   async getTeamInvitations(@Param('id') id: number) {
     return this.teamsService.getTeamInvitations(id);
-  }
-
-  @Get('user/invitations')
-  @UseGuards(JwtAuthGuard)
-  async getUserInvitations(@Req() req: Request) {
-    const user = (req as any).user;
-    return this.teamsService.getUserInvitations(user.email);
   }
 
   @Post()

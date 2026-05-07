@@ -10,7 +10,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     const host = process.env.REDIS_HOST || 'localhost';
     const port = parseInt(process.env.REDIS_PORT) || 6379;
-    
+
     this.client = new Redis({
       host,
       port,
@@ -34,50 +34,72 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return this.client;
   }
 
-  // Leaderboard operations
+  // ==================== Leaderboard (JSON cache) ====================
+
+  /** Store a full leaderboard snapshot as a JSON string. */
   async setLeaderboard(leaderboard: any[]) {
-    const key = REDIS_KEYS.LEADERBOARD;
-    await this.client.setex(key, CACHE_TTL.LEADERBOARD, JSON.stringify(leaderboard));
+    await this.client.setex(
+      REDIS_KEYS.LEADERBOARD_CACHE,
+      CACHE_TTL.LEADERBOARD,
+      JSON.stringify(leaderboard),
+    );
   }
 
+  /** Retrieve the cached leaderboard snapshot. */
   async getLeaderboard(): Promise<any[] | null> {
-    const key = REDIS_KEYS.LEADERBOARD;
-    const data = await this.client.get(key);
+    const data = await this.client.get(REDIS_KEYS.LEADERBOARD_CACHE);
     return data ? JSON.parse(data) : null;
   }
 
-  async updateLeaderboardEntry(userId: string, score: number) {
-    const key = REDIS_KEYS.LEADERBOARD;
-    await this.client.zadd(key, score, userId);
-    await this.client.expire(key, CACHE_TTL.LEADERBOARD);
+  /** Invalidate the leaderboard JSON cache. */
+  async invalidateLeaderboard() {
+    await this.client.del(REDIS_KEYS.LEADERBOARD_CACHE);
   }
 
-  async getTopLeaderboard(limit: number = 10): Promise<any[]> {
-    const key = REDIS_KEYS.LEADERBOARD;
-    const entries = await this.client.zrevrange(key, 0, limit - 1, 'WITHSCORES');
-    const result = [];
+  // ==================== Leaderboard (sorted set) ====================
+
+  /** Update a single user's score in the leaderboard sorted set. */
+  async updateLeaderboardEntry(userId: string, score: number) {
+    await this.client.zadd(REDIS_KEYS.LEADERBOARD_SCORES, score, userId);
+    await this.client.expire(REDIS_KEYS.LEADERBOARD_SCORES, CACHE_TTL.LEADERBOARD);
+  }
+
+  /** Get the top N entries from the leaderboard sorted set. */
+  async getTopLeaderboard(limit: number = 10): Promise<{ userId: string; score: number }[]> {
+    const entries = await this.client.zrevrange(
+      REDIS_KEYS.LEADERBOARD_SCORES,
+      0,
+      limit - 1,
+      'WITHSCORES',
+    );
+    const result: { userId: string; score: number }[] = [];
     for (let i = 0; i < entries.length; i += 2) {
-      result.push({
-        userId: entries[i],
-        score: parseFloat(entries[i + 1]),
-      });
+      result.push({ userId: entries[i], score: parseFloat(entries[i + 1]) });
     }
     return result;
   }
 
-  // Upcoming matches caching
+  // ==================== Upcoming matches ====================
+
   async setUpcomingMatches(matches: any[]) {
-    const key = REDIS_KEYS.UPCOMING_MATCHES;
-    await this.client.setex(key, CACHE_TTL.UPCOMING_MATCHES, JSON.stringify(matches));
+    await this.client.setex(
+      REDIS_KEYS.UPCOMING_MATCHES,
+      CACHE_TTL.UPCOMING_MATCHES,
+      JSON.stringify(matches),
+    );
   }
 
   async getUpcomingMatches(): Promise<any[] | null> {
-    const key = REDIS_KEYS.UPCOMING_MATCHES;
-    const data = await this.client.get(key);
+    const data = await this.client.get(REDIS_KEYS.UPCOMING_MATCHES);
     return data ? JSON.parse(data) : null;
   }
 
-  // User stats caching
+  async invalidateUpcomingMatches() {
+    await this.client.del(REDIS_KEYS.UPCOMING_MATCHES);
+  }
+
+  // ==================== User stats ====================
+
   async setUserStats(userId: string, stats: any) {
     const key = `${REDIS_KEYS.USER_STATS}:${userId}`;
     await this.client.setex(key, CACHE_TTL.USER_STATS, JSON.stringify(stats));
@@ -89,7 +111,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return data ? JSON.parse(data) : null;
   }
 
-  // Team stats caching
+  async invalidateUserStats(userId: string) {
+    await this.client.del(`${REDIS_KEYS.USER_STATS}:${userId}`);
+  }
+
+  // ==================== Team stats ====================
+
   async setTeamStats(teamId: string, stats: any) {
     const key = `${REDIS_KEYS.TEAM_STATS}:${teamId}`;
     await this.client.setex(key, CACHE_TTL.TEAM_STATS, JSON.stringify(stats));
@@ -101,7 +128,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return data ? JSON.parse(data) : null;
   }
 
-  // Match results caching
+  async invalidateTeamStats(teamId: string) {
+    await this.client.del(`${REDIS_KEYS.TEAM_STATS}:${teamId}`);
+  }
+
+  // ==================== Match results ====================
+
   async setMatchResults(matchId: string, results: any) {
     const key = `${REDIS_KEYS.MATCH_RESULTS}:${matchId}`;
     await this.client.setex(key, CACHE_TTL.MATCH_RESULTS, JSON.stringify(results));
@@ -113,27 +145,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     return data ? JSON.parse(data) : null;
   }
 
-  // Invalidate cache
-  async invalidateLeaderboard() {
-    await this.client.del(REDIS_KEYS.LEADERBOARD);
-  }
-
-  async invalidateUpcomingMatches() {
-    await this.client.del(REDIS_KEYS.UPCOMING_MATCHES);
-  }
-
-  async invalidateUserStats(userId: string) {
-    const key = `${REDIS_KEYS.USER_STATS}:${userId}`;
-    await this.client.del(key);
-  }
-
-  async invalidateTeamStats(teamId: string) {
-    const key = `${REDIS_KEYS.TEAM_STATS}:${teamId}`;
-    await this.client.del(key);
-  }
-
   async invalidateMatchResults(matchId: string) {
-    const key = `${REDIS_KEYS.MATCH_RESULTS}:${matchId}`;
-    await this.client.del(key);
+    await this.client.del(`${REDIS_KEYS.MATCH_RESULTS}:${matchId}`);
   }
 }

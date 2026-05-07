@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommunityController = void 0;
 const common_1 = require("@nestjs/common");
 const community_service_1 = require("./community.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const public_decorator_1 = require("../../common/decorators/public.decorator");
 let CommunityController = class CommunityController {
     constructor(communityService) {
         this.communityService = communityService;
@@ -46,12 +48,14 @@ let CommunityController = class CommunityController {
 };
 exports.CommunityController = CommunityController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], CommunityController.prototype, "findAll", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -103,6 +107,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CommunityController.prototype, "remove", null);
 exports.CommunityController = CommunityController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('community'),
     __metadata("design:paramtypes", [community_service_1.CommunityService])
 ], CommunityController);

@@ -46,6 +46,7 @@ export class SendMatchInvitationDto {
 
 export class RespondMatchInvitationDto {
   invitationId: number;
+  inviterId: number;  // ID of the user who sent the original invitation
   response: 'accept' | 'decline' | 'counter';
   counterDate?: Date;
   reason?: string;
@@ -81,6 +82,7 @@ export class SendTeamInvitationDto {
 
 export class RespondTeamInvitationDto {
   invitationId: number;
+  inviterId: number;  // ID of the user who sent the original invitation
   response: 'accept' | 'decline';
   reason?: string;
 }

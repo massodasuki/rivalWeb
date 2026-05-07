@@ -4,10 +4,10 @@ export declare class TeamsController {
     private teamsService;
     constructor(teamsService: TeamsService);
     findAll(): Promise<import("./entities/team.entity").Team[]>;
+    getUserInvitations(req: Request): Promise<import("./entities/team-invitation.entity").TeamInvitation[]>;
     findOne(id: number): Promise<import("./entities/team.entity").Team>;
     getMembers(id: number): Promise<import("./entities/team-member.entity").TeamMember[]>;
     getTeamInvitations(id: number): Promise<import("./entities/team-invitation.entity").TeamInvitation[]>;
-    getUserInvitations(req: Request): Promise<import("./entities/team-invitation.entity").TeamInvitation[]>;
     create(data: {
         name: string;
         sport: string;

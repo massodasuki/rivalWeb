@@ -1,18 +1,23 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, UseGuards } from '@nestjs/common';
 import { MatchesService } from './matches.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('matches')
 export class MatchesController {
   private readonly logger = new Logger(MatchesController.name);
 
   constructor(private matchesService: MatchesService) {}
 
+  @Public()
   @Get()
   async findAll() {
     this.logger.log('GET /matches - Fetching all matches');
     return this.matchesService.findAll();
   }
 
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: number) {
     this.logger.log(`GET /matches/${id} - Fetching match`);
@@ -20,20 +25,22 @@ export class MatchesController {
   }
 
   @Post()
-  async create(@Body() data: {
-    home_team_id?: number;
-    away_team_id?: number;
-    home_team?: string;
-    away_team?: string;
-    sport: string;
-    scheduled_at: string;
-    location?: string;
-    max_players?: number;
-    description?: string;
-  }) {
+  async create(
+    @Body()
+    data: {
+      home_team_id?: number;
+      away_team_id?: number;
+      home_team?: string;
+      away_team?: string;
+      sport: string;
+      scheduled_at: string;
+      location?: string;
+      max_players?: number;
+      description?: string;
+    },
+  ) {
     this.logger.log(`POST /matches - Creating match with data:`, data);
     try {
-      // Extract only the fields that match the entity
       const matchData = {
         home_team_id: data.home_team_id,
         away_team_id: data.away_team_id,
@@ -45,7 +52,6 @@ export class MatchesController {
         max_players: data.max_players || 10,
         description: data.description,
       };
-      this.logger.log(`Converted match data:`, matchData);
       const result = await this.matchesService.create(matchData);
       this.logger.log(`Match created successfully:`, result);
       return result;
@@ -56,13 +62,19 @@ export class MatchesController {
   }
 
   @Post(':id/participants')
-  async addParticipant(@Param('id') id: number, @Body() body: { user_id: number; role?: string }) {
+  async addParticipant(
+    @Param('id') id: number,
+    @Body() body: { user_id: number; role?: string },
+  ) {
     this.logger.log(`POST /matches/${id}/participants - Adding participant:`, body);
     return this.matchesService.addParticipant(id, body.user_id, body.role);
   }
 
   @Post(':id/stats')
-  async updateStats(@Param('id') id: number, @Body() body: { user_id: number; goals?: number; assists?: number; rating?: number }) {
+  async updateStats(
+    @Param('id') id: number,
+    @Body() body: { user_id: number; goals?: number; assists?: number; rating?: number },
+  ) {
     return this.matchesService.updateStats(id, body.user_id, body);
   }
 

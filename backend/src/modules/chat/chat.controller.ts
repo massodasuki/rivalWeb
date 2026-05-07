@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('chat')
 export class ChatController {
   constructor(private chatService: ChatService) {}
@@ -26,7 +28,9 @@ export class ChatController {
   }
 
   @Post('messages')
-  async saveMessage(@Body() data: { room_id: number; sender_id: number; message: string }) {
+  async saveMessage(
+    @Body() data: { room_id: number; sender_id: number; message: string },
+  ) {
     return this.chatService.saveMessage(data);
   }
 

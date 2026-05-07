@@ -1,16 +1,21 @@
-import { Controller, Get, Param, Patch, Delete, Body, Post } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Delete, Body, Post, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Public()
   @Get()
   async findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
 
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: number): Promise<User> {
     return this.usersService.findOne(id);
@@ -37,7 +42,10 @@ export class UsersController {
   }
 
   @Post(':id/password')
-  async updatePassword(@Param('id') id: number, @Body() data: { current_password?: string; new_password: string }) {
+  async updatePassword(
+    @Param('id') id: number,
+    @Body() data: { current_password: string; new_password: string },
+  ) {
     return this.usersService.updatePassword(id, data);
   }
 

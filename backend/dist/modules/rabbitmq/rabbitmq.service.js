@@ -13,12 +13,17 @@ const amqp = require("amqplib");
 const queues_1 = require("../../common/constants/queues");
 let RabbitmqService = RabbitmqService_1 = class RabbitmqService {
     constructor() {
+        this.connection = null;
+        this.channel = null;
         this.logger = new common_1.Logger(RabbitmqService_1.name);
+        this.reconnectTimer = null;
     }
     async onModuleInit() {
         await this.connect();
     }
     async onModuleDestroy() {
+        if (this.reconnectTimer)
+            clearTimeout(this.reconnectTimer);
         await this.disconnect();
     }
     async connect() {
@@ -31,36 +36,46 @@ let RabbitmqService = RabbitmqService_1 = class RabbitmqService {
                 this.logger.error('RabbitMQ connection error:', err);
             });
             this.connection.on('close', () => {
-                this.logger.warn('RabbitMQ connection closed');
+                this.logger.warn('RabbitMQ connection closed — scheduling reconnect in 5s');
+                this.channel = null;
+                this.connection = null;
+                this.scheduleReconnect();
             });
             this.channel = await this.connection.createChannel();
             this.logger.log('RabbitMQ channel created');
             this.channel.on('error', (err) => {
                 this.logger.error('RabbitMQ channel error:', err);
+                this.channel = null;
             });
             this.channel.on('close', () => {
                 this.logger.warn('RabbitMQ channel closed');
+                this.channel = null;
             });
-            this.logger.log('Asserting queues...');
             await this.channel.assertQueue(queues_1.QUEUES.NOTIFICATIONS, { durable: true });
             await this.channel.assertQueue(queues_1.QUEUES.TEAM_INVITES, { durable: true });
             await this.channel.assertQueue(queues_1.QUEUES.MATCH_INVITES, { durable: true });
             await this.channel.assertQueue(queues_1.QUEUES.LEADERBOARD_CACHE, { durable: true });
             await this.channel.assertQueue(queues_1.QUEUES.MATCH_RESULTS, { durable: true });
-            this.logger.log('Queues asserted');
-            this.logger.log(`Asserting exchange: ${queues_1.EXCHANGES.NOTIFICATIONS}`);
             await this.channel.assertExchange(queues_1.EXCHANGES.NOTIFICATIONS, 'topic', { durable: true });
-            this.logger.log('Binding queues to exchange...');
             await this.channel.bindQueue(queues_1.QUEUES.NOTIFICATIONS, queues_1.EXCHANGES.NOTIFICATIONS, queues_1.ROUTING_KEYS.TEAM_INVITE);
             await this.channel.bindQueue(queues_1.QUEUES.NOTIFICATIONS, queues_1.EXCHANGES.NOTIFICATIONS, queues_1.ROUTING_KEYS.MATCH_INVITE);
             await this.channel.bindQueue(queues_1.QUEUES.LEADERBOARD_CACHE, queues_1.EXCHANGES.NOTIFICATIONS, queues_1.ROUTING_KEYS.LEADERBOARD_UPDATE);
             await this.channel.bindQueue(queues_1.QUEUES.MATCH_RESULTS, queues_1.EXCHANGES.NOTIFICATIONS, queues_1.ROUTING_KEYS.MATCH_COMPLETED);
-            this.logger.log('Queues bound to exchange');
-            this.logger.log('Connected to RabbitMQ');
+            this.logger.log('RabbitMQ fully connected and configured');
         }
         catch (error) {
             this.logger.error('Failed to connect to RabbitMQ', error);
+            this.scheduleReconnect();
         }
+    }
+    scheduleReconnect() {
+        if (this.reconnectTimer)
+            return;
+        this.reconnectTimer = setTimeout(async () => {
+            this.reconnectTimer = null;
+            this.logger.log('Attempting RabbitMQ reconnect...');
+            await this.connect();
+        }, 5000);
     }
     async disconnect() {
         try {
@@ -75,6 +90,10 @@ let RabbitmqService = RabbitmqService_1 = class RabbitmqService {
         }
     }
     async publishToQueue(queue, message) {
+        if (!this.channel) {
+            this.logger.warn(`RabbitMQ channel not available — skipping publish to queue: ${queue}`);
+            return;
+        }
         try {
             this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
                 persistent: true,
@@ -86,10 +105,12 @@ let RabbitmqService = RabbitmqService_1 = class RabbitmqService {
         }
     }
     async publishWithRoutingKey(routingKey, message) {
+        if (!this.channel) {
+            this.logger.warn(`RabbitMQ channel not available — skipping publish with routing key: ${routingKey}`);
+            return;
+        }
         try {
-            this.channel.publish(queues_1.EXCHANGES.NOTIFICATIONS, routingKey, Buffer.from(JSON.stringify(message)), {
-                persistent: true,
-            });
+            this.channel.publish(queues_1.EXCHANGES.NOTIFICATIONS, routingKey, Buffer.from(JSON.stringify(message)), { persistent: true });
             this.logger.debug(`Message published with routing key: ${routingKey}`);
         }
         catch (error) {
@@ -97,22 +118,29 @@ let RabbitmqService = RabbitmqService_1 = class RabbitmqService {
         }
     }
     async consume(queue, callback) {
+        if (!this.channel) {
+            this.logger.warn(`RabbitMQ channel not available — cannot consume from queue: ${queue}`);
+            return;
+        }
         await this.channel.consume(queue, async (msg) => {
             if (msg) {
                 try {
                     const content = JSON.parse(msg.content.toString());
                     await callback(content);
-                    this.channel.ack(msg);
+                    this.channel?.ack(msg);
                 }
                 catch (error) {
                     this.logger.error(`Error processing message from queue: ${queue}`, error);
-                    this.channel.nack(msg, false, false);
+                    this.channel?.nack(msg, false, false);
                 }
             }
         });
     }
     getChannel() {
         return this.channel;
+    }
+    isReady() {
+        return this.channel !== null;
     }
 };
 exports.RabbitmqService = RabbitmqService;

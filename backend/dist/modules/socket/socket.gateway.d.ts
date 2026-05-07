@@ -55,7 +55,7 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
             senderId: number;
             senderName: string;
             content: string;
-            messageType: "text" | "image" | "file" | "system";
+            messageType: "file" | "text" | "image" | "system";
             createdAt: Date;
         };
     } | {
@@ -109,7 +109,7 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
             inviterName: string;
             teamId: number;
             teamName: string;
-            role: "captain" | "member" | "vice_captain";
+            role: "member" | "captain" | "vice_captain";
             status: string;
             message: string;
             createdAt: Date;

@@ -55,8 +55,8 @@ function Teams() {
       console.error('Error fetching invitations:', err);
       // Fallback to mock data
       setPendingInvites([
-        { id: 1, team_id: 1, invited_email: 'user@example.com', inviter_id: 1, status: 'pending', created_at: new Date().toISOString(), team: { id: 1, name: 'Elite FC', sport: 'Futsal' }, inviter: { id: 1, username: 'John Doe' } },
-        { id: 2, team_id: 2, invited_email: 'user@example.com', inviter_id: 2, status: 'pending', created_at: new Date().toISOString(), team: { id: 2, name: 'Quick Players', sport: 'Basketball' }, inviter: { id: 2, username: 'Jane Smith' } },
+        { id: 1, team_id: 1, invited_email: 'user@example.com', inviter_id: 1, status: 'pending', created_at: new Date().toISOString(), team: { id: 1, name: 'Elite FC', sport: 'Futsal' }, inviter: { id: 1, name: 'John Doe' } },
+        { id: 2, team_id: 2, invited_email: 'user@example.com', inviter_id: 2, status: 'pending', created_at: new Date().toISOString(), team: { id: 2, name: 'Quick Players', sport: 'Basketball' }, inviter: { id: 2, name: 'Jane Smith' } },
       ]);
     }
   }, []);
@@ -115,9 +115,9 @@ function Teams() {
       if (mockTeam) {
         setSelectedTeam(mockTeam);
         setTeamMembers([
-          { id: 1, user_id: 1, role: 'captain', user: { id: 1, username: 'You' } },
-          { id: 2, user_id: 2, role: 'player', user: { id: 2, username: 'Player 2' } },
-          { id: 3, user_id: 3, role: 'player', user: { id: 3, username: 'Player 3' } },
+          { id: 1, user_id: 1, role: 'captain', user: { id: 1, name: 'You' } },
+          { id: 2, user_id: 2, role: 'player', user: { id: 2, name: 'Player 2' } },
+          { id: 3, user_id: 3, role: 'player', user: { id: 3, name: 'Player 3' } },
         ]);
         setShowRosterModal(true);
       }
@@ -297,7 +297,7 @@ function Teams() {
                   <strong>{invite.team?.name || 'Unknown Team'}</strong>
                   <span className="badge badge-info" style={{ marginLeft: '0.5rem' }}>{invite.team?.sport || 'Unknown'}</span>
                   <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                    Invited by {invite.inviter?.username || 'Unknown'} - {formatTimeAgo(invite.created_at)}
+                    Invited by {invite.inviter?.name || 'Unknown'} - {formatTimeAgo(invite.created_at)}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -430,14 +430,14 @@ function Teams() {
                     fontSize: '1rem',
                     flexShrink: 0
                   }}>
-                    {member.user?.username?.charAt(0).toUpperCase() || '?'}
+                    {member.user?.name?.charAt(0).toUpperCase() || '?'}
                   </div>
                   
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#111827' }}>
-                        {member.user?.username || `User ${member.user_id}`}
+                        {member.user?.name || `User ${member.user_id}`}
                       </span>
                       {member.role === 'captain' && (
                         <span style={{ 

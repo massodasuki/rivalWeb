@@ -6,11 +6,11 @@ export declare class AuthController {
     constructor(authService: AuthService);
     register(registerDto: RegisterDto): Promise<{
         access_token: string;
-        user: import("./entities/user.entity").User;
+        user: Omit<import("../users/entities/user.entity").User, "password_hash">;
     }>;
     login(loginDto: LoginDto): Promise<{
         access_token: string;
-        user: import("./entities/user.entity").User;
+        user: Omit<import("../users/entities/user.entity").User, "password_hash">;
     }>;
     getProfile(req: any): Promise<any>;
 }

@@ -37,39 +37,36 @@ let RedisService = RedisService_1 = class RedisService {
         return this.client;
     }
     async setLeaderboard(leaderboard) {
-        const key = redis_1.REDIS_KEYS.LEADERBOARD;
-        await this.client.setex(key, redis_1.CACHE_TTL.LEADERBOARD, JSON.stringify(leaderboard));
+        await this.client.setex(redis_1.REDIS_KEYS.LEADERBOARD_CACHE, redis_1.CACHE_TTL.LEADERBOARD, JSON.stringify(leaderboard));
     }
     async getLeaderboard() {
-        const key = redis_1.REDIS_KEYS.LEADERBOARD;
-        const data = await this.client.get(key);
+        const data = await this.client.get(redis_1.REDIS_KEYS.LEADERBOARD_CACHE);
         return data ? JSON.parse(data) : null;
     }
+    async invalidateLeaderboard() {
+        await this.client.del(redis_1.REDIS_KEYS.LEADERBOARD_CACHE);
+    }
     async updateLeaderboardEntry(userId, score) {
-        const key = redis_1.REDIS_KEYS.LEADERBOARD;
-        await this.client.zadd(key, score, userId);
-        await this.client.expire(key, redis_1.CACHE_TTL.LEADERBOARD);
+        await this.client.zadd(redis_1.REDIS_KEYS.LEADERBOARD_SCORES, score, userId);
+        await this.client.expire(redis_1.REDIS_KEYS.LEADERBOARD_SCORES, redis_1.CACHE_TTL.LEADERBOARD);
     }
     async getTopLeaderboard(limit = 10) {
-        const key = redis_1.REDIS_KEYS.LEADERBOARD;
-        const entries = await this.client.zrevrange(key, 0, limit - 1, 'WITHSCORES');
+        const entries = await this.client.zrevrange(redis_1.REDIS_KEYS.LEADERBOARD_SCORES, 0, limit - 1, 'WITHSCORES');
         const result = [];
         for (let i = 0; i < entries.length; i += 2) {
-            result.push({
-                userId: entries[i],
-                score: parseFloat(entries[i + 1]),
-            });
+            result.push({ userId: entries[i], score: parseFloat(entries[i + 1]) });
         }
         return result;
     }
     async setUpcomingMatches(matches) {
-        const key = redis_1.REDIS_KEYS.UPCOMING_MATCHES;
-        await this.client.setex(key, redis_1.CACHE_TTL.UPCOMING_MATCHES, JSON.stringify(matches));
+        await this.client.setex(redis_1.REDIS_KEYS.UPCOMING_MATCHES, redis_1.CACHE_TTL.UPCOMING_MATCHES, JSON.stringify(matches));
     }
     async getUpcomingMatches() {
-        const key = redis_1.REDIS_KEYS.UPCOMING_MATCHES;
-        const data = await this.client.get(key);
+        const data = await this.client.get(redis_1.REDIS_KEYS.UPCOMING_MATCHES);
         return data ? JSON.parse(data) : null;
+    }
+    async invalidateUpcomingMatches() {
+        await this.client.del(redis_1.REDIS_KEYS.UPCOMING_MATCHES);
     }
     async setUserStats(userId, stats) {
         const key = `${redis_1.REDIS_KEYS.USER_STATS}:${userId}`;
@@ -80,6 +77,9 @@ let RedisService = RedisService_1 = class RedisService {
         const data = await this.client.get(key);
         return data ? JSON.parse(data) : null;
     }
+    async invalidateUserStats(userId) {
+        await this.client.del(`${redis_1.REDIS_KEYS.USER_STATS}:${userId}`);
+    }
     async setTeamStats(teamId, stats) {
         const key = `${redis_1.REDIS_KEYS.TEAM_STATS}:${teamId}`;
         await this.client.setex(key, redis_1.CACHE_TTL.TEAM_STATS, JSON.stringify(stats));
@@ -88,6 +88,9 @@ let RedisService = RedisService_1 = class RedisService {
         const key = `${redis_1.REDIS_KEYS.TEAM_STATS}:${teamId}`;
         const data = await this.client.get(key);
         return data ? JSON.parse(data) : null;
+    }
+    async invalidateTeamStats(teamId) {
+        await this.client.del(`${redis_1.REDIS_KEYS.TEAM_STATS}:${teamId}`);
     }
     async setMatchResults(matchId, results) {
         const key = `${redis_1.REDIS_KEYS.MATCH_RESULTS}:${matchId}`;
@@ -98,23 +101,8 @@ let RedisService = RedisService_1 = class RedisService {
         const data = await this.client.get(key);
         return data ? JSON.parse(data) : null;
     }
-    async invalidateLeaderboard() {
-        await this.client.del(redis_1.REDIS_KEYS.LEADERBOARD);
-    }
-    async invalidateUpcomingMatches() {
-        await this.client.del(redis_1.REDIS_KEYS.UPCOMING_MATCHES);
-    }
-    async invalidateUserStats(userId) {
-        const key = `${redis_1.REDIS_KEYS.USER_STATS}:${userId}`;
-        await this.client.del(key);
-    }
-    async invalidateTeamStats(teamId) {
-        const key = `${redis_1.REDIS_KEYS.TEAM_STATS}:${teamId}`;
-        await this.client.del(key);
-    }
     async invalidateMatchResults(matchId) {
-        const key = `${redis_1.REDIS_KEYS.MATCH_RESULTS}:${matchId}`;
-        await this.client.del(key);
+        await this.client.del(`${redis_1.REDIS_KEYS.MATCH_RESULTS}:${matchId}`);
     }
 };
 exports.RedisService = RedisService;

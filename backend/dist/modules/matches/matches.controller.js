@@ -16,6 +16,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MatchesController = void 0;
 const common_1 = require("@nestjs/common");
 const matches_service_1 = require("./matches.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const public_decorator_1 = require("../../common/decorators/public.decorator");
 let MatchesController = MatchesController_1 = class MatchesController {
     constructor(matchesService) {
         this.matchesService = matchesService;
@@ -43,7 +45,6 @@ let MatchesController = MatchesController_1 = class MatchesController {
                 max_players: data.max_players || 10,
                 description: data.description,
             };
-            this.logger.log(`Converted match data:`, matchData);
             const result = await this.matchesService.create(matchData);
             this.logger.log(`Match created successfully:`, result);
             return result;
@@ -69,12 +70,14 @@ let MatchesController = MatchesController_1 = class MatchesController {
 };
 exports.MatchesController = MatchesController;
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], MatchesController.prototype, "findAll", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -120,6 +123,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], MatchesController.prototype, "remove", null);
 exports.MatchesController = MatchesController = MatchesController_1 = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('matches'),
     __metadata("design:paramtypes", [matches_service_1.MatchesService])
 ], MatchesController);

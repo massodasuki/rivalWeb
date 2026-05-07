@@ -268,10 +268,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     @MessageBody() data: RespondMatchInvitationDto,
   ) {
     try {
-      // Notify inviter about the response
       const responder = await this.usersService.findOne(client.userId!);
-      
-      this.server.emit(SOCKET_EVENTS.MATCH_INVITATION_UPDATED, {
+
+      // Notify the original inviter only — not everyone
+      this.server.to(`user_${data.inviterId}`).emit(SOCKET_EVENTS.MATCH_INVITATION_UPDATED, {
         invitationId: data.invitationId,
         responderId: client.userId,
         responderName: responder?.name,
@@ -336,8 +336,9 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   ) {
     try {
       const responder = await this.usersService.findOne(client.userId!);
-      
-      this.server.emit(SOCKET_EVENTS.TEAM_INVITATION_UPDATED, {
+
+      // Notify the original inviter only — not everyone
+      this.server.to(`user_${data.inviterId}`).emit(SOCKET_EVENTS.TEAM_INVITATION_UPDATED, {
         invitationId: data.invitationId,
         responderId: client.userId,
         responderName: responder?.name,

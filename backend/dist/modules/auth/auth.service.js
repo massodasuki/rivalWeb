@@ -18,7 +18,7 @@ const jwt_1 = require("@nestjs/jwt");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const bcrypt = require("bcryptjs");
-const user_entity_1 = require("./entities/user.entity");
+const user_entity_1 = require("../users/entities/user.entity");
 let AuthService = class AuthService {
     constructor(usersRepository, jwtService) {
         this.usersRepository = usersRepository;
@@ -27,7 +27,7 @@ let AuthService = class AuthService {
     async register(registerDto) {
         const { password, ...rest } = registerDto;
         const existingUser = await this.usersRepository.findOne({
-            where: { email: registerDto.email }
+            where: { email: registerDto.email },
         });
         if (existingUser) {
             throw new common_1.ConflictException('An account with this email already exists');
@@ -39,7 +39,8 @@ let AuthService = class AuthService {
         });
         await this.usersRepository.save(user);
         const access_token = this.jwtService.sign({ sub: user.id, email: user.email });
-        return { access_token, user };
+        const { password_hash, ...safeUser } = user;
+        return { access_token, user: safeUser };
     }
     async login(loginDto) {
         const user = await this.usersRepository.findOne({ where: { email: loginDto.email } });
@@ -47,7 +48,8 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const access_token = this.jwtService.sign({ sub: user.id, email: user.email });
-        return { access_token, user };
+        const { password_hash, ...safeUser } = user;
+        return { access_token, user: safeUser };
     }
     async validateUser(userId) {
         return this.usersRepository.findOne({ where: { id: userId } });

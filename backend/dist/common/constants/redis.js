@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CACHE_TTL = exports.REDIS_KEYS = void 0;
 exports.REDIS_KEYS = {
-    LEADERBOARD: 'leaderboard',
+    LEADERBOARD_CACHE: 'leaderboard:cache',
+    LEADERBOARD_SCORES: 'leaderboard:scores',
     UPCOMING_MATCHES: 'upcoming_matches',
     USER_STATS: 'user_stats',
     TEAM_STATS: 'team_stats',

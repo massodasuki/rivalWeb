@@ -179,7 +179,7 @@ let SocketGateway = SocketGateway_1 = class SocketGateway {
     async handleRespondMatchInvitation(client, data) {
         try {
             const responder = await this.usersService.findOne(client.userId);
-            this.server.emit(socket_dto_1.SOCKET_EVENTS.MATCH_INVITATION_UPDATED, {
+            this.server.to(`user_${data.inviterId}`).emit(socket_dto_1.SOCKET_EVENTS.MATCH_INVITATION_UPDATED, {
                 invitationId: data.invitationId,
                 responderId: client.userId,
                 responderName: responder?.name,
@@ -224,7 +224,7 @@ let SocketGateway = SocketGateway_1 = class SocketGateway {
     async handleRespondTeamInvitation(client, data) {
         try {
             const responder = await this.usersService.findOne(client.userId);
-            this.server.emit(socket_dto_1.SOCKET_EVENTS.TEAM_INVITATION_UPDATED, {
+            this.server.to(`user_${data.inviterId}`).emit(socket_dto_1.SOCKET_EVENTS.TEAM_INVITATION_UPDATED, {
                 invitationId: data.invitationId,
                 responderId: client.userId,
                 responderName: responder?.name,

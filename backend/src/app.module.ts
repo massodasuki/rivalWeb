@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { FriendshipsModule } from './modules/friendships/friendships.module';
@@ -21,6 +23,13 @@ import { HealthModule } from './modules/health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,  // 1 minute window
+        limit: 60,   // 60 requests per minute globally
+      },
+    ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -29,11 +38,12 @@ import { HealthModule } from './modules/health/health.module';
       password: process.env.DB_PASSWORD || 'rival_pass',
       database: process.env.DB_DATABASE || 'rival_db',
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
+      // Only auto-sync in local dev when explicitly opted in — never in staging/prod
+      synchronize: process.env.DB_SYNC === 'true',
       logging: process.env.DB_LOGGING
         ? (process.env.DB_LOGGING.split(',') as any)
         : process.env.NODE_ENV !== 'production'
-          ? ['error', 'warn', 'query']
+          ? ['error', 'warn']
           : ['error'],
     }),
     RabbitmqModule,
@@ -50,6 +60,13 @@ import { HealthModule } from './modules/health/health.module';
     SocketModule,
     WorkersModule,
     HealthModule,
+  ],
+  providers: [
+    // Apply throttler globally — auth controller overrides with stricter limits
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

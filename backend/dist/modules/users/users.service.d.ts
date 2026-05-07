@@ -27,7 +27,7 @@ export declare class UsersService {
         status: string;
     }>;
     updatePassword(id: number, data: {
-        current_password?: string;
+        current_password: string;
         new_password: string;
     }): Promise<{
         status: string;

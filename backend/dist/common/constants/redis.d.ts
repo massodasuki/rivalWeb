@@ -1,5 +1,6 @@
 export declare const REDIS_KEYS: {
-    readonly LEADERBOARD: "leaderboard";
+    readonly LEADERBOARD_CACHE: "leaderboard:cache";
+    readonly LEADERBOARD_SCORES: "leaderboard:scores";
     readonly UPCOMING_MATCHES: "upcoming_matches";
     readonly USER_STATS: "user_stats";
     readonly TEAM_STATS: "team_stats";

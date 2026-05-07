@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AchievementsController = void 0;
 const common_1 = require("@nestjs/common");
 const achievements_service_1 = require("./achievements.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let AchievementsController = class AchievementsController {
     constructor(achievementsService) {
         this.achievementsService = achievementsService;
@@ -71,6 +72,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AchievementsController.prototype, "remove", null);
 exports.AchievementsController = AchievementsController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('achievements'),
     __metadata("design:paramtypes", [achievements_service_1.AchievementsService])
 ], AchievementsController);

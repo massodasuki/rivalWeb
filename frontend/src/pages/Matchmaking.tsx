@@ -1,19 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { matchService, Match } from '../services/matchService';
+import { useAuth } from '../contexts/AuthContext';
 
 function Matchmaking() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('find');
   const [sport, setSport] = useState('');
   const [location, setLocation] = useState('');
   const [matches, setMatches] = useState<Match[]>([]);
+  const [joinedMatches, setJoinedMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joinedLoading, setJoinedLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Mock hosted matches data (would come from user-specific endpoint)
-  const hostedMatches = [
-    { id: 1, sport: 'Futsal', teams: 'My Team vs Opponent', time: 'Feb 2, 8:00 PM', location: 'Sports Arena B', status: 'confirmed' },
-    { id: 2, sport: 'Basketball', teams: 'My Team vs Guests', time: 'Feb 5, 5:00 PM', location: 'City Gym', status: 'pending' },
-  ];
+  const hostedMatches = matches.filter((m) => {
+    if (!user) return false;
+    // Show matches where the user is the home team captain (best approximation without a created_by field)
+    return m.home_team_id === user.id || m.home_team_name === user.name;
+  });
 
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
@@ -25,7 +30,6 @@ function Matchmaking() {
     } catch (err) {
       console.error('Error fetching matches:', err);
       setError('Failed to load matches. Using mock data.');
-      // Fallback to mock data
       setMatches([
         { id: 1, sport: 'Futsal', teams: 'Lightning vs Thunder', time: 'Today, 8:00 PM', scheduled_at: new Date().toISOString(), location: 'Sports Arena A', players: '8/10', price: '$20' },
         { id: 2, sport: 'Basketball', teams: 'Eagles vs Hawks', time: 'Tomorrow, 6:00 PM', scheduled_at: new Date(Date.now() + 86400000).toISOString(), location: 'City Gym', players: '6/10', price: '$15' },
@@ -37,11 +41,29 @@ function Matchmaking() {
     }
   }, []);
 
+  // Fetch matches the current user has joined
+  const fetchJoinedMatches = useCallback(async () => {
+    if (!user) return;
+    try {
+      setJoinedLoading(true);
+      // Backend supports filtering by participant_id query param
+      const data = await matchService.getMatches({ participant_id: String(user.id) });
+      setJoinedMatches(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching joined matches:', err);
+      setJoinedMatches([]);
+    } finally {
+      setJoinedLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (activeTab === 'find') {
       fetchMatches();
+    } else if (activeTab === 'joined') {
+      fetchJoinedMatches();
     }
-  }, [activeTab, fetchMatches]);
+  }, [activeTab, fetchMatches, fetchJoinedMatches]);
 
   const handleSearch = async () => {
     try {
@@ -86,13 +108,12 @@ function Matchmaking() {
   };
 
   const handleJoinMatch = async (matchId: number) => {
+    const userId = user?.id;
+    if (!userId) return;
     try {
-      const userId = localStorage.getItem('userId');
-      await matchService.addParticipant(matchId, {
-        user_id: userId ? parseInt(userId, 10) : 1,
-        role: 'player',
-      });
+      await matchService.addParticipant(matchId, { user_id: userId, role: 'player' });
       alert('Joined match successfully.');
+      fetchJoinedMatches();
     } catch (err) {
       console.error('Error joining match:', err);
       alert('Failed to join match.');
@@ -227,46 +248,74 @@ function Matchmaking() {
 
       {activeTab === 'hosted' && (
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Match</th>
-                <th>Sport</th>
-                <th>Date/Time</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {hostedMatches.map((match) => (
-                <tr key={match.id}>
-                  <td>{match.teams}</td>
-                  <td><span className="badge badge-info">{match.sport}</span></td>
-                  <td>{match.time}</td>
-                  <td>{match.location}</td>
-                  <td>
-                    <span className={`badge ${match.status === 'confirmed' ? 'badge-success' : 'badge-warning'}`}>
-                      {match.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn btn-outline btn-sm" onClick={() => handleEditHosted(match.id)}>Edit</button>
-                    <button className="btn btn-danger btn-sm" style={{ marginLeft: '0.5rem' }} onClick={() => handleCancelHosted(match.id)}>Cancel</button>
-                  </td>
+          {hostedMatches.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No hosted matches yet</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Match</th>
+                  <th>Sport</th>
+                  <th>Date/Time</th>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {hostedMatches.map((match) => (
+                  <tr key={match.id}>
+                    <td>{match.home_team_name || 'Home'} vs {match.away_team_name || 'Away'}</td>
+                    <td><span className="badge badge-info">{match.sport}</span></td>
+                    <td>{match.time || new Date(match.scheduled_at).toLocaleString()}</td>
+                    <td>{match.location || 'TBD'}</td>
+                    <td>
+                      <span className={`badge ${match.status === 'confirmed' ? 'badge-success' : 'badge-warning'}`}>
+                        {match.status || 'pending'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="btn btn-outline btn-sm" onClick={() => handleEditHosted(match.id)}>Edit</button>
+                      <button className="btn btn-danger btn-sm" style={{ marginLeft: '0.5rem' }} onClick={() => handleCancelHosted(match.id)}>Cancel</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
       {activeTab === 'joined' && (
-        <div className="card">
-          <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No joined matches yet</p>
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <button className="btn btn-primary" onClick={() => setActiveTab('find')}>Find Matches to Join</button>
-          </div>
+        <div>
+          {joinedLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}>Loading joined matches...</div>
+          ) : joinedMatches.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+              <p style={{ color: 'var(--text-secondary)' }}>No joined matches yet</p>
+              <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => setActiveTab('find')}>
+                Find Matches to Join
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-2">
+              {joinedMatches.map((match) => (
+                <div key={match.id} className="card">
+                  <div className="card-header">
+                    <span className="badge badge-info">{match.sport}</span>
+                    <span className="badge badge-success">{match.status || 'Joined'}</span>
+                  </div>
+                  <h3 className="card-title" style={{ marginBottom: '0.5rem' }}>
+                    {match.home_team_name || 'Home'} vs {match.away_team_name || 'Away'}
+                  </h3>
+                  <div style={{ color: 'var(--text-secondary)' }}>
+                    <div>📅 {match.time || new Date(match.scheduled_at).toLocaleString()}</div>
+                    <div>📍 {match.location || 'TBD'}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

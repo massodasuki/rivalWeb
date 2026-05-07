@@ -1,5 +1,6 @@
 export const REDIS_KEYS = {
-  LEADERBOARD: 'leaderboard',
+  LEADERBOARD_CACHE: 'leaderboard:cache',   // JSON blob (string key)
+  LEADERBOARD_SCORES: 'leaderboard:scores', // sorted set key
   UPCOMING_MATCHES: 'upcoming_matches',
   USER_STATS: 'user_stats',
   TEAM_STATS: 'team_stats',

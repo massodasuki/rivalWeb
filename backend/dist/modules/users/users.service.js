@@ -84,7 +84,10 @@ let UsersService = class UsersService {
         return { status: 'privacy_updated' };
     }
     async updatePassword(id, data) {
-        await this.findOne(id);
+        const user = await this.findOne(id);
+        if (!data.current_password || !(await bcrypt.compare(data.current_password, user.password_hash))) {
+            throw new common_1.UnauthorizedException('Current password is incorrect');
+        }
         const password_hash = await bcrypt.hash(data.new_password, 10);
         await this.usersRepository.update(id, { password_hash });
         return { status: 'password_updated' };

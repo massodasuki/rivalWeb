@@ -1,49 +1,47 @@
 import { io, Socket } from 'socket.io-client';
 
-// Socket instance singleton
+// Socket singleton — one connection shared across the entire app
 let socket: Socket | null = null;
+let currentToken: string | null = null;
 
-// Use environment variable or fallback to same-origin (supports proxy/nginx)
-const getBackendUrl = () => {
+const getBackendUrl = (): string => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   if (backendUrl && backendUrl.trim() !== '') {
     return backendUrl;
   }
-  // Empty string means same-origin (Vite proxy or Nginx)
   return '';
 };
 
-// Get frontend URL for CORS
-const getFrontendUrl = () => {
-  if (import.meta.env.VITE_FRONTEND_URL) {
-    return import.meta.env.VITE_FRONTEND_URL;
-  }
-  // Default ports for common development setups
-  return 'http://localhost:3000';
-};
-
 /**
- * Get or create the socket connection
- * @param token - JWT authentication token
- * @returns Socket instance
+ * Get or create the socket connection.
+ * Returns the existing socket if it is already connected with the same token.
+ * Only creates a new connection when there is no live socket or the token changed.
  */
 export const getSocket = (token?: string): Socket => {
-  // Always disconnect existing socket and create a new one with the token
+  const resolvedToken = token || localStorage.getItem('authToken');
+
+  // Reuse existing connected socket if the token hasn't changed
+  if (socket && socket.connected && resolvedToken === currentToken) {
+    return socket;
+  }
+
+  // Disconnect stale socket before creating a new one
   if (socket) {
     socket.disconnect();
     socket = null;
   }
 
+  currentToken = resolvedToken;
+
   const backendUrl = getBackendUrl();
   const socketUrl = backendUrl ? `${backendUrl}/socket.io` : '/socket.io';
 
   socket = io(socketUrl, {
-    auth: { token: token || localStorage.getItem('authToken') },
+    auth: { token: resolvedToken },
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-    forceNew: true, // Always create a new connection
   });
 
   socket.on('connect', () => {
@@ -62,25 +60,26 @@ export const getSocket = (token?: string): Socket => {
 };
 
 /**
- * Reconnect socket with a new token (for login/token refresh)
+ * Reconnect socket with a fresh token (call after login / token refresh).
  */
 export const reconnectSocketWithToken = (): Socket => {
-  const token = localStorage.getItem('authToken') || undefined;
-  return getSocket(token);
+  currentToken = null; // Force new connection
+  return getSocket();
 };
 
 /**
- * Disconnect the socket connection
+ * Disconnect and destroy the socket connection.
  */
 export const disconnectSocket = (): void => {
   if (socket) {
     socket.disconnect();
     socket = null;
+    currentToken = null;
   }
 };
 
 /**
- * Check if socket is connected
+ * Check if the socket is currently connected.
  */
 export const isSocketConnected = (): boolean => {
   return socket?.connected ?? false;
@@ -88,6 +87,7 @@ export const isSocketConnected = (): boolean => {
 
 export default {
   getSocket,
+  reconnectSocketWithToken,
   disconnectSocket,
   isSocketConnected,
 };

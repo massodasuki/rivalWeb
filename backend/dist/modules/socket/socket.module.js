@@ -24,10 +24,18 @@ exports.SocketModule = SocketModule = __decorate([
         imports: [
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
-                    secret: configService.get('JWT_SECRET') || 'rival-secret-key',
-                    signOptions: { expiresIn: configService.get('JWT_EXPIRES_IN') || '1h' },
-                }),
+                useFactory: async (configService) => {
+                    const secret = configService.get('JWT_SECRET');
+                    if (!secret) {
+                        throw new Error('JWT_SECRET environment variable is required but not set');
+                    }
+                    return {
+                        secret,
+                        signOptions: {
+                            expiresIn: configService.get('JWT_EXPIRES_IN') || '7d',
+                        },
+                    };
+                },
                 inject: [config_1.ConfigService],
             }),
             (0, common_1.forwardRef)(() => chat_module_1.ChatModule),

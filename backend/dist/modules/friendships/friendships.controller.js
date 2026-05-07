@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FriendshipsController = void 0;
 const common_1 = require("@nestjs/common");
 const friendships_service_1 = require("./friendships.service");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 let FriendshipsController = class FriendshipsController {
     constructor(friendshipsService) {
         this.friendshipsService = friendshipsService;
@@ -72,6 +73,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], FriendshipsController.prototype, "remove", null);
 exports.FriendshipsController = FriendshipsController = __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('friendships'),
     __metadata("design:paramtypes", [friendships_service_1.FriendshipsService])
 ], FriendshipsController);

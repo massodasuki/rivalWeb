@@ -7,63 +7,40 @@ import Stats from './pages/Stats';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
-import { useEffect, useState } from 'react';
-import { authService } from './services/authService';
+import { useAuth } from './contexts/AuthContext';
 
-// Protected Route wrapper component
+// Protected Route — synchronous localStorage check, no loading flash
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setIsAuthenticated(authService.isAuthenticated());
-    setLoading(false);
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh' 
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         Loading...
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 }
 
-// Guest Route wrapper (only for unauthenticated users)
+// Guest Route — only for unauthenticated users
 function GuestRoute({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setIsAuthenticated(authService.isAuthenticated());
-    setLoading(false);
-  }, []);
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100vh' 
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
         Loading...
       </div>
     );
   }
 
-  if (isAuthenticated) {
+  if (user) {
     return <Navigate to="/" replace />;
   }
 
@@ -71,10 +48,7 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const handleLogout = () => {
-    authService.logout();
-    window.location.href = '/login';
-  };
+  const { logout } = useAuth();
 
   return (
     <div className="app">
@@ -136,7 +110,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           </nav>
           <div className="sidebar-footer">
-            <button className="logout-btn" onClick={handleLogout}>
+            <button className="logout-btn" onClick={logout}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>

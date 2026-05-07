@@ -3,8 +3,10 @@ import { matchService, Match } from '../services/matchService';
 import { teamService, Team } from '../services/teamService';
 import { communityService, CommunityPost } from '../services/communityService';
 import CreateMatchModal, { MatchFormData } from '../components/CreateMatchModal';
+import { useAuth } from '../contexts/AuthContext';
 
 function Dashboard() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -14,8 +16,7 @@ function Dashboard() {
   const [isCreateMatchModalOpen, setIsCreateMatchModalOpen] = useState(false);
 
   // Mock data for leaderboard and activity (would need separate endpoints)
-  const leaderboard = [
-    { rank: 1, team: 'Thunder Strikers', wins: 28, points: 84, sport: 'Futsal' },
+  const leaderboard = [    { rank: 1, team: 'Thunder Strikers', wins: 28, points: 84, sport: 'Futsal' },
     { rank: 2, team: 'Goal Getters', wins: 25, points: 75, sport: 'Futsal' },
     { rank: 3, team: 'Weekend Warriors', wins: 18, points: 54, sport: 'Futsal' },
     { rank: 4, team: 'Night Riders', wins: 16, points: 48, sport: 'Futsal' },
@@ -33,12 +34,7 @@ function Dashboard() {
   ];
 
   // Mock user data (would come from auth context)
-  const mockUser = {
-    name: 'Alex Johnson',
-    avatar: 'AJ',
-    team: 'Weekend Warriors',
-    teamRank: 3,
-  };
+  const displayName = user?.name || 'there';
 
   const teamStats = {
     matchesPlayed: 24,
@@ -103,9 +99,6 @@ function Dashboard() {
 
   const handleCreateMatch = async (formData: MatchFormData): Promise<void> => {
     try {
-      console.log('Creating match with data:', formData);
-      
-      // Transform form data to match backend DTO
       await matchService.createMatch({
         sport: formData.sport,
         scheduled_at: formData.scheduled_at,
@@ -115,24 +108,18 @@ function Dashboard() {
         max_players: formData.max_players,
         description: formData.description,
       });
-      
-      console.log('✅ Match created successfully');
       fetchDashboardData();
     } catch (err) {
       console.error('❌ Error creating match:', err);
       throw err;
     }
-  };;
+  };
 
   const handleJoinMatch = async (matchId: number) => {
+    const userId = user?.id;
+    if (!userId) return;
     try {
-      console.log('Join Match button clicked for match:', matchId);
-      // Example: Add participant to match
-      await matchService.addParticipant(matchId, {
-        user_id: 1, // Would come from auth context
-        role: 'player',
-      });
-      console.log('Joined match successfully');
+      await matchService.addParticipant(matchId, { user_id: userId, role: 'player' });
       fetchDashboardData();
     } catch (err) {
       console.error('Error joining match:', err);
@@ -140,7 +127,6 @@ function Dashboard() {
   };
 
   const handleFindRival = () => {
-    console.log('Find Rival button clicked');
     teamService.getTeams()
       .then((data) => {
         alert(`Found ${data.length} teams. Redirecting to Teams page.`);
@@ -152,7 +138,6 @@ function Dashboard() {
   };
 
   const handleCreateTeam = async () => {
-    console.log('Create Team button clicked');
     const name = window.prompt('Team name?');
     if (!name) return;
     const sport = window.prompt('Sport (e.g., futsal, basketball, tennis)?', 'futsal') || 'futsal';
@@ -172,12 +157,10 @@ function Dashboard() {
       window.location.href = '/matchmaking';
       return;
     }
+    const userId = user?.id;
+    if (!userId) return;
     try {
-      const userId = localStorage.getItem('userId');
-      await matchService.addParticipant(matchId, {
-        user_id: userId ? parseInt(userId, 10) : 1,
-        role: 'player',
-      });
+      await matchService.addParticipant(matchId, { user_id: userId, role: 'player' });
       alert('Joined match successfully.');
       fetchDashboardData();
     } catch (err) {
@@ -249,7 +232,7 @@ function Dashboard() {
       <header className="header">
         <div>
           <h1 className="header-title">Dashboard</h1>
-          <p className="header-subtitle">Welcome back, {mockUser.name}!</p>
+          <p className="header-subtitle">Welcome back, {displayName}!</p>
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleCreateMatchClick}>+ Create Match</button>
@@ -444,7 +427,7 @@ function Dashboard() {
             </div>
             <div className="leaderboard">
               {leaderboard.map((team) => (
-                <div key={team.rank} className={`leaderboard-row ${team.team === mockUser.team ? 'current-team' : ''}`}>
+                <div key={team.rank} className="leaderboard-row">
                   <div className="leaderboard-rank">
                     {team.rank <= 3 ? (
                       <span className={`medal medal-${team.rank}`}>

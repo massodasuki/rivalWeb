@@ -1,11 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { userService, User } from '../services/userService';
+import { useAuth } from '../contexts/AuthContext';
 
 function Stats() {
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [sport, setSport] = useState('all');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  // Fetch user data from API on mount
+  const fetchUserData = async () => {
+    const userId = authUser?.id;
+    if (!userId) return;
+    try {
+      setLoading(true);
+      const userData = await userService.getUser(userId);
+      setUser(userData);
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
 
   // Mock data for leaderboard and achievements (would need separate endpoints)
   const personalStats = {
@@ -35,22 +57,6 @@ function Stats() {
   ];
 
   const currentStats = sport === 'all' ? personalStats.overall : personalStats[sport as keyof typeof personalStats];
-
-  // Fetch user data from API (optional - would require auth)
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        const userData = await userService.getUser(parseInt(userId, 10));
-        setUser(userData);
-      }
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="stats">
