@@ -1,4 +1,4 @@
-import { User } from '../../auth/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 export declare class Achievement {
     id: number;
     user_id: number;

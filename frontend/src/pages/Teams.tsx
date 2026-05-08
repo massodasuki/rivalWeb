@@ -183,12 +183,17 @@ function Teams() {
   const myTeams = teams.map((team) => {
     const membersValue = team.members;
     const membersCount = Array.isArray(membersValue) ? membersValue.length : (membersValue || 0);
+    // captain may be a full User object from the API or a plain string from mock data
+    const captainName =
+      typeof team.captain === 'object' && team.captain !== null
+        ? (team.captain as any).name || 'Unknown'
+        : (team.captain as string) || 'Unknown';
     return {
       id: team.id,
       name: team.name,
       sport: team.sport,
       members: membersCount,
-      captain: team.captain || 'Unknown',
+      captain: captainName,
       wins: team.wins || 0,
       losses: team.losses || 0,
     };

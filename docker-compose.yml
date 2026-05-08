@@ -24,8 +24,6 @@ services:
       start_period: 10s
     networks:
       - rival-network
-    env_file:
-      - backend/.env
 
   # Redis Cache
   redis:
@@ -45,8 +43,6 @@ services:
       start_period: 10s
     networks:
       - rival-network
-    env_file:
-      - backend/.env
 
   # RabbitMQ Message Queue
   rabbitmq:
@@ -66,11 +62,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     networks:
       - rival-network
-    env_file:
-      - backend/.env
 
   # Backend API (NestJS)
   backend:
@@ -86,25 +80,27 @@ services:
       DB_USERNAME: ${DB_USERNAME:-rival_user}
       DB_PASSWORD: ${DB_PASSWORD:-rival_pass}
       DB_DATABASE: ${DB_DATABASE:-rival_db}
-      
+      # Enable schema sync on first run — set DB_SYNC=false after initial setup
+      DB_SYNC: ${DB_SYNC:-true}
+      DB_LOGGING: ${DB_LOGGING:-error,warn}
+
       # JWT
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-here}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
-      
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
       # App
       PORT: 3001
       NODE_ENV: ${NODE_ENV:-production}
-      
-      # CORS
-      CORS_ORIGIN: http://localhost:3000
-      
+
+      # CORS — frontend origin (nginx serves on port 3000)
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+
       # RabbitMQ
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rival_user}:${RABBITMQ_PASS:-rival_pass}@rabbitmq:5672
       RABBITMQ_USER: ${RABBITMQ_USER:-rival_user}
       RABBITMQ_PASS: ${RABBITMQ_PASS:-rival_pass}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-rival_user}:${RABBITMQ_PASS:-rival_pass}@rabbitmq:5672
-      
+
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -118,16 +114,13 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'node.*dist/main' || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/healthz || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - rival-network
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
 
   # Frontend (React + Nginx)
   frontend:
@@ -136,25 +129,19 @@ services:
       dockerfile: Dockerfile
     container_name: rival-frontend
     restart: unless-stopped
-    environment:
-      VITE_API_URL:
-      VITE_BACKEND_URL:
     ports:
       - "3000:80"
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     networks:
       - rival-network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
 
 networks:
   rival-network:

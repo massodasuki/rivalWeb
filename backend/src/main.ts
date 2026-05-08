@@ -10,12 +10,17 @@ async function bootstrap() {
   const httpLogger = new Logger('HTTP');
   
   // Enable CORS for frontend requests
+  // FRONTEND_URL env var is set in docker-compose; falls back to localhost origins for local dev
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const corsOrigins = frontendUrl
+    ? [frontendUrl, 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174']
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
-    exposedHeaders: ['Access-Control-Allow-Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     preflightContinue: false,
   });
 

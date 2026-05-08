@@ -1,5 +1,5 @@
 import { Match } from './match.entity';
-import { User } from '../../auth/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 export declare class MatchStat {
     id: number;
     match_id: number;

@@ -109,7 +109,7 @@ export declare class SocketGateway implements OnGatewayInit, OnGatewayConnection
             inviterName: string;
             teamId: number;
             teamName: string;
-            role: "member" | "captain" | "vice_captain";
+            role: "captain" | "member" | "vice_captain";
             status: string;
             message: string;
             createdAt: Date;

@@ -10,7 +10,8 @@ export interface Team {
   updated_at?: string;
   // Additional fields for UI
   members?: number | TeamMember[];
-  captain?: string;
+  // captain comes from the API as a full User object (ManyToOne relation) or a string in mock data
+  captain?: string | { id: number; name?: string; email?: string; [key: string]: any };
   wins?: number;
   losses?: number;
   rating?: number;

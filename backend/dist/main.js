@@ -9,12 +9,15 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const configService = app.get(config_1.ConfigService);
     const httpLogger = new common_1.Logger('HTTP');
+    const frontendUrl = configService.get('FRONTEND_URL');
+    const corsOrigins = frontendUrl
+        ? [frontendUrl, 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174']
+        : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
     app.enableCors({
-        origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:3001'],
+        origin: corsOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
-        exposedHeaders: ['Access-Control-Allow-Origin'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
         preflightContinue: false,
     });
     app.use((req, res, next) => {

@@ -1,5 +1,5 @@
 import { ChatRoom } from './chat-room.entity';
-import { User } from '../../auth/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 export declare class ChatMessage {
     id: number;
     room_id: number;
