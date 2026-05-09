@@ -443,12 +443,88 @@ function ProtectedRoute({ children }) {
 | 3.7 | Frontend | No global auth context | 🟡 Bug | ✅ Fixed |
 | 3.8 | Frontend | Settings loads with fake placeholder data | 🟡 Bug | ✅ Fixed |
 | 4.1 | Backend | Workers are TODO stubs | 🔵 Missing | ⏳ Pending |
-| 4.2 | Backend | No leaderboard HTTP endpoint | 🔵 Missing | ⏳ Pending |
+| 4.2 | Backend | No leaderboard HTTP endpoint | 🔵 Missing | ✅ Fixed |
 | 4.3 | Backend | `socket-io-redis` imported but not configured | 🔵 Missing | ⏳ Pending |
 | 4.4 | Backend | `ioredis` duplicated in deps/devDeps | 🔵 Missing | ✅ Fixed |
 | 4.5 | Backend | Invitation responses broadcast to all clients | 🔵 Missing | ✅ Fixed |
 | 4.6 | Backend | `ChatGateway` is dead code conflicting with `SocketGateway` | 🔵 Missing | ✅ Fixed |
 | 5.1 | Backend | `synchronize: true` risk in non-dev environments | ⚪ Quality | ✅ Fixed |
 | 5.2 | Backend | No pagination on list endpoints | ⚪ Quality | ⏳ Pending |
-| 5.3 | Frontend | `window.prompt`/`alert` used for UX | ⚪ Quality | ⏳ Pending |
+| 5.3 | Frontend | `window.prompt`/`alert` used for UX (Dashboard) | ⚪ Quality | ✅ Fixed |
 | 5.4 | Frontend | `ProtectedRoute` causes unnecessary loading flash | ⚪ Quality | ✅ Fixed |
+
+---
+
+## Priority 6 — Real Dashboard & Stats (Completed)
+
+All hardcoded/mock data in Dashboard and Stats pages has been replaced with live API data. Spec is at `.kiro/specs/real-dashboard/`.
+
+### What was built
+
+#### Backend — New Endpoints
+
+**`GET /leaderboard`** (`LeaderboardModule`)
+- File: `backend/src/modules/leaderboard/`
+- Counts completed matches per team (home + away), sorts by wins descending, limits to 20
+- Redis cache: 5-minute TTL via `REDIS_KEYS.LEADERBOARD_CACHE` (JSON SETEX)
+- Returns: `{ rank, teamId, teamName, sport, wins, points }[]`
+- Registered in `AppModule`
+
+**`GET /matches?participant_id=N`** and **`GET /matches?created_by=N`**
+- File: `backend/src/modules/matches/matches.controller.ts` + `matches.service.ts`
+- `participant_id`: filters matches where user is a `MatchParticipant`
+- `created_by`: filters matches where user captains the home team
+- Both validate as positive integers; invalid values return HTTP 400
+
+**`GET /users/:id/activity`**
+- File: `backend/src/modules/users/users.controller.ts` + `users.service.ts`
+- Returns 20 most recent `ActivityLog` records ordered by `created_at DESC`
+- Shape: `{ id, type, message, createdAt }`
+- Route declared before `GET :id` (static-before-parameterised rule)
+
+**`ActivityLog` entity** (`activity_log` table)
+- File: `backend/src/modules/users/entities/activity-log.entity.ts`
+- Columns: `id`, `user_id` (FK → users), `type` (varchar 20), `message` (varchar 500), `created_at` (auto timestamp)
+- Auto-inserted on: match join (`match_join`), team join (`team_join`), achievement create/update (`achievement`)
+- Insertion is wrapped in try/catch — failures are logged but never break the primary operation
+- Registered in `UsersModule`, `MatchesModule`, `TeamsModule`, `AchievementsModule`
+
+#### Frontend — New Services
+
+- `frontend/src/services/leaderboardService.ts` — `getLeaderboard()` → `GET /api/leaderboard`
+- `frontend/src/services/achievementService.ts` — `getUserAchievements(userId)` → `GET /api/achievements/user/:userId`
+- `frontend/src/services/userService.ts` — added `getUserActivity(id)` → `GET /api/users/:id/activity` and `ActivityEntry` interface
+
+#### Frontend — Dashboard.tsx
+
+- Stat cards (Wins, Losses, Goals, Win Rate) now use `GET /users/:id/stats`
+- Leaderboard widget now uses `GET /leaderboard` (top 8 entries, loading/error states)
+- Recent Activity table now uses `GET /users/:id/activity` (relative timestamps via `timeAgo()` helper)
+- `handleCreateTeam` → `navigate('/teams')` (was `window.prompt`)
+- `handleFindRival` → `navigate('/teams')` (was `window.alert`)
+- `handleQuickJoin` → tries join then `navigate('/matchmaking')` (was `window.alert`)
+- Hardcoded `teamStats`, `leaderboard`, `recentActivity` constants removed entirely
+
+#### Frontend — Stats.tsx
+
+- Personal stats tab uses `GET /users/:id/stats` (matches, wins, goals, rating)
+- Leaderboard tab lazy-fetches `GET /leaderboard` on first activation
+- Achievements tab lazy-fetches `GET /achievements/user/:userId` on first activation
+- Hardcoded `personalStats`, `leaderboard`, `achievements` constants removed entirely
+- Achievement cards use `type` as name, `value > 0` as earned indicator, icon map for emojis
+
+### Still Pending
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| 4.1 | Backend | Workers are TODO stubs (email, match results, achievements) | ⏳ Pending |
+| 4.3 | Backend | `socket-io-redis` imported but not configured | ⏳ Pending |
+| 5.2 | Backend | No pagination on list endpoints | ⏳ Pending |
+| 5.3 | Frontend | `window.prompt`/`alert` still used in `Matchmaking.tsx` and `Teams.tsx` | ⏳ Pending |
+
+### Notes for Next Session
+
+- `DB_SYNC=true` is required in local dev for the `activity_log` table to be auto-created. For staging/prod, write a TypeORM migration.
+- The leaderboard Redis cache key is `leaderboard:cache` (JSON string). The sorted set key is `leaderboard:scores`. Never mix them.
+- The `Matchmaking.tsx` "Joined Matches" and "My Hosted Matches" tabs can now use `matchService.getMatches({ participant_id: userId })` and `matchService.getMatches({ created_by: userId })` — the backend endpoints are ready, the frontend just needs to be wired up.
+- Workers in `backend/src/workers/` are still stubs. The `achievements.worker.ts` should query user stats and call `AchievementsService.updateValue()` to unlock achievements based on thresholds.

@@ -4,7 +4,15 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { MatchParticipant } from '../matches/entities/match-participant.entity';
 import { MatchStat } from '../matches/entities/match-stat.entity';
+import { ActivityLog } from './entities/activity-log.entity';
 import * as bcrypt from 'bcryptjs';
+
+export interface ActivityEntry {
+  id: number;
+  type: string;
+  message: string;
+  createdAt: string;
+}
 
 @Injectable()
 export class UsersService {
@@ -15,6 +23,8 @@ export class UsersService {
     private matchParticipantsRepository: Repository<MatchParticipant>,
     @InjectRepository(MatchStat)
     private matchStatsRepository: Repository<MatchStat>,
+    @InjectRepository(ActivityLog)
+    private activityLogRepository: Repository<ActivityLog>,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -60,6 +70,20 @@ export class UsersService {
       assists,
       rating: Math.round(rating * 100) / 100,
     };
+  }
+
+  async getActivity(userId: number): Promise<ActivityEntry[]> {
+    const logs = await this.activityLogRepository.find({
+      where: { user_id: userId },
+      order: { created_at: 'DESC' },
+      take: 20,
+    });
+    return logs.map(log => ({
+      id: log.id,
+      type: log.type,
+      message: log.message,
+      createdAt: log.created_at.toISOString(),
+    }));
   }
 
   async update(id: number, updateData: Partial<User>): Promise<User> {

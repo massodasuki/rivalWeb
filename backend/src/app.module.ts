@@ -17,6 +17,7 @@ import { RabbitmqModule } from './modules/rabbitmq/rabbitmq.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { WorkersModule } from './workers/workers.module';
 import { HealthModule } from './modules/health/health.module';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { HealthModule } from './modules/health/health.module';
     SocketModule,
     WorkersModule,
     HealthModule,
+    LeaderboardModule,
   ],
   providers: [
     // Apply throttler globally — auth controller overrides with stricter limits

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Logger, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { MatchesService } from './matches.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
@@ -12,9 +12,30 @@ export class MatchesController {
 
   @Public()
   @Get()
-  async findAll() {
+  async findAll(
+    @Query('participant_id') participantId?: string,
+    @Query('created_by') createdBy?: string,
+  ) {
     this.logger.log('GET /matches - Fetching all matches');
-    return this.matchesService.findAll();
+
+    let pid: number | undefined;
+    let cid: number | undefined;
+
+    if (participantId !== undefined) {
+      pid = parseInt(participantId, 10);
+      if (isNaN(pid) || pid <= 0) {
+        throw new BadRequestException('participant_id must be a positive integer');
+      }
+    }
+
+    if (createdBy !== undefined) {
+      cid = parseInt(createdBy, 10);
+      if (isNaN(cid) || cid <= 0) {
+        throw new BadRequestException('created_by must be a positive integer');
+      }
+    }
+
+    return this.matchesService.findAll({ participantId: pid, createdBy: cid });
   }
 
   @Public()

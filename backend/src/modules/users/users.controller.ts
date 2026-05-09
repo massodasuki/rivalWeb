@@ -15,6 +15,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get(':id/activity')
+  async getActivity(@Param('id') id: number) {
+    return this.usersService.getActivity(id);
+  }
+
   @Public()
   @Get(':id')
   async findOne(@Param('id') id: number): Promise<User> {

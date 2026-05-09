@@ -6,10 +6,11 @@ import { Team } from './entities/team.entity';
 import { TeamMember } from './entities/team-member.entity';
 import { TeamInvitation } from './entities/team-invitation.entity';
 import { UsersModule } from '../users/users.module';
+import { ActivityLog } from '../users/entities/activity-log.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Team, TeamMember, TeamInvitation]),
+    TypeOrmModule.forFeature([Team, TeamMember, TeamInvitation, ActivityLog]),
     UsersModule,
   ],
   controllers: [TeamsController],

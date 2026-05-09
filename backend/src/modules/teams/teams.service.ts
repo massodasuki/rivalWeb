@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './entities/team.entity';
 import { TeamMember } from './entities/team-member.entity';
 import { TeamInvitation } from './entities/team-invitation.entity';
 import { UsersService } from '../users/users.service';
+import { ActivityLog } from '../users/entities/activity-log.entity';
 
 @Injectable()
 export class TeamsService {
+  private readonly logger = new Logger(TeamsService.name);
+
   constructor(
     @InjectRepository(Team)
     private teamsRepository: Repository<Team>,
@@ -15,6 +18,8 @@ export class TeamsService {
     private teamMembersRepository: Repository<TeamMember>,
     @InjectRepository(TeamInvitation)
     private teamInvitationsRepository: Repository<TeamInvitation>,
+    @InjectRepository(ActivityLog)
+    private activityLogRepository: Repository<ActivityLog>,
     private usersService: UsersService,
   ) {}
 
@@ -74,7 +79,19 @@ export class TeamsService {
       user_id: userId,
       role,
     });
-    return this.teamMembersRepository.save(member);
+    const saved = await this.teamMembersRepository.save(member);
+
+    try {
+      await this.activityLogRepository.save({
+        user_id: userId,
+        type: 'team_join',
+        message: `You were added to team #${teamId}`,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to insert activity log for team join (user=${userId}, team=${teamId}): ${err}`);
+    }
+
+    return saved;
   }
 
   async removeMember(teamId: number, userId: number): Promise<void> {

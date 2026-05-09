@@ -1,77 +1,109 @@
 import { useState, useEffect } from 'react';
-import { userService, User } from '../services/userService';
+import { userService, UserStats } from '../services/userService';
+import { leaderboardService, LeaderboardEntry } from '../services/leaderboardService';
+import { achievementService, Achievement } from '../services/achievementService';
 import { useAuth } from '../contexts/AuthContext';
+
+const achievementIcons: Record<string, string> = {
+  wins: '🏆',
+  goals: '⚽',
+  matches: '🏟️',
+  teams: '👥',
+  default: '🎖️',
+};
+
+const getIcon = (type: string) => achievementIcons[type] || achievementIcons.default;
 
 function Stats() {
   const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('personal');
   const [sport, setSport] = useState('all');
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
 
-  // Fetch user data from API on mount
-  const fetchUserData = async () => {
+  // Personal stats state
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+
+  // Leaderboard state
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState(false);
+
+  // Achievements state
+  const [achievementsData, setAchievementsData] = useState<Achievement[]>([]);
+  const [achievementsLoading, setAchievementsLoading] = useState(false);
+  const [achievementsError, setAchievementsError] = useState(false);
+
+  // Fetch user stats on mount / when authUser changes
+  useEffect(() => {
     const userId = authUser?.id;
     if (!userId) return;
-    try {
-      setLoading(true);
-      const userData = await userService.getUser(userId);
-      setUser(userData);
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchUserData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setLoading(true);
+    userService.getUserStats(userId)
+      .then(setUserStats)
+      .catch((err) => {
+        console.error('Error fetching user stats:', err);
+        setUserStats(null);
+      })
+      .finally(() => setLoading(false));
   }, [authUser?.id]);
 
-  // Mock data for leaderboard and achievements (would need separate endpoints)
-  const personalStats = {
-    overall: { matches: 24, wins: 18, losses: 6, goals: 42, assists: 15, rating: 4.2 },
-    futsal: { matches: 15, wins: 12, losses: 3, goals: 28, assists: 8, rating: 4.5 },
-    basketball: { matches: 9, wins: 6, losses: 3, goals: 14, assists: 7, rating: 3.9 },
-  };
+  // Lazy-fetch leaderboard and achievements when the tab changes
+  useEffect(() => {
+    if (activeTab === 'leaderboard' && leaderboardData.length === 0 && !leaderboardLoading) {
+      setLeaderboardLoading(true);
+      setLeaderboardError(false);
+      leaderboardService.getLeaderboard()
+        .then(setLeaderboardData)
+        .catch(() => setLeaderboardError(true))
+        .finally(() => setLeaderboardLoading(false));
+    }
 
-  const leaderboard = [
-    { rank: 1, name: 'John Doe', sport: 'Futsal', rating: 4.8, wins: 32, points: 156 },
-    { rank: 2, name: 'Sarah K.', sport: 'Basketball', rating: 4.7, wins: 28, points: 142 },
-    { rank: 3, name: 'Mike J.', sport: 'Futsal', rating: 4.6, wins: 25, points: 138 },
-    { rank: 4, name: 'Emily R.', sport: 'Tennis', rating: 4.5, wins: 22, points: 125 },
-    { rank: 5, name: 'You', sport: 'Futsal', rating: 4.2, wins: 18, points: 98 },
-    { rank: 6, name: 'Alex T.', sport: 'Basketball', rating: 4.1, wins: 16, points: 92 },
-    { rank: 7, name: 'Chris L.', sport: 'Futsal', rating: 4.0, wins: 14, points: 85 },
-    { rank: 8, name: 'Diana M.', sport: 'Tennis', rating: 3.9, wins: 12, points: 78 },
-  ];
+    if (
+      activeTab === 'achievements' &&
+      achievementsData.length === 0 &&
+      !achievementsLoading &&
+      authUser?.id
+    ) {
+      setAchievementsLoading(true);
+      setAchievementsError(false);
+      achievementService.getUserAchievements(authUser.id)
+        .then(setAchievementsData)
+        .catch(() => setAchievementsError(true))
+        .finally(() => setAchievementsLoading(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, authUser?.id]);
 
-  const achievements = [
-    { id: 1, name: 'First Win', description: 'Won your first match', earned: true, icon: '🏆' },
-    { id: 2, name: 'Hat Trick', description: 'Scored 3 goals in one match', earned: true, icon: '⚽' },
-    { id: 3, name: 'Team Player', description: 'Joined 5 teams', earned: true, icon: '👥' },
-    { id: 4, name: 'Social Butterfly', description: 'Made 10 friends', earned: false, icon: '🦋' },
-    { id: 5, name: 'Champion', description: 'Won a tournament', earned: false, icon: '🥇' },
-    { id: 6, name: 'Century Club', description: 'Played 100 matches', earned: false, icon: '💯' },
-  ];
-
-  const currentStats = sport === 'all' ? personalStats.overall : personalStats[sport as keyof typeof personalStats];
+  // Stat card values — show 0 on null/error
+  const statMatches = userStats?.matches ?? 0;
+  const statWins = userStats?.wins ?? 0;
+  const statGoals = userStats?.goals ?? 0;
+  const statRating = userStats?.rating ?? 0;
 
   return (
     <div className="stats">
       <header className="header">
-        <h1 className="header-title">Stats & Leaderboards</h1>
+        <h1 className="header-title">Stats &amp; Leaderboards</h1>
       </header>
 
       <div className="tabs">
-        <button className={`tab ${activeTab === 'personal' ? 'active' : ''}`} onClick={() => setActiveTab('personal')}>
+        <button
+          className={`tab ${activeTab === 'personal' ? 'active' : ''}`}
+          onClick={() => setActiveTab('personal')}
+        >
           Personal Stats
         </button>
-        <button className={`tab ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>
+        <button
+          className={`tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leaderboard')}
+        >
           Leaderboard
         </button>
-        <button className={`tab ${activeTab === 'achievements' ? 'active' : ''}`} onClick={() => setActiveTab('achievements')}>
+        <button
+          className={`tab ${activeTab === 'achievements' ? 'active' : ''}`}
+          onClick={() => setActiveTab('achievements')}
+        >
           Achievements
         </button>
       </div>
@@ -79,10 +111,11 @@ function Stats() {
       {activeTab === 'personal' && (
         <div>
           <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <select 
-              className="form-input" 
-              style={{ width: '200px' }} 
-              value={sport} 
+            {/* Sport filter is kept as a UI affordance; the API returns aggregate totals only */}
+            <select
+              className="form-input"
+              style={{ width: '200px' }}
+              value={sport}
               onChange={(e) => setSport(e.target.value)}
             >
               <option value="all">All Sports</option>
@@ -94,19 +127,19 @@ function Stats() {
 
           <div className="grid grid-4">
             <div className="card stat-card">
-              <div className="stat-value">{currentStats.matches}</div>
+              <div className="stat-value">{loading ? '…' : statMatches}</div>
               <div className="stat-label">Matches</div>
             </div>
             <div className="card stat-card">
-              <div className="stat-value">{currentStats.wins}</div>
+              <div className="stat-value">{loading ? '…' : statWins}</div>
               <div className="stat-label">Wins</div>
             </div>
             <div className="card stat-card">
-              <div className="stat-value">{currentStats.goals}</div>
+              <div className="stat-value">{loading ? '…' : statGoals}</div>
               <div className="stat-label">Goals</div>
             </div>
             <div className="card stat-card">
-              <div className="stat-value">{currentStats.rating}</div>
+              <div className="stat-value">{loading ? '…' : statRating}</div>
               <div className="stat-label">Rating</div>
             </div>
           </div>
@@ -127,49 +160,101 @@ function Stats() {
 
       {activeTab === 'leaderboard' && (
         <div className="card">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Sport</th>
-                <th>Rating</th>
-                <th>Wins</th>
-                <th>Points</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboard.map((player) => (
-                <tr key={player.rank} style={{ background: player.name === 'You' ? 'var(--background)' : 'transparent' }}>
-                  <td>
-                    <strong style={{ color: player.rank <= 3 ? 'var(--warning)' : 'inherit' }}>
-                      {player.rank <= 3 ? '🥇🥈🥉'[player.rank - 1] : player.rank}
-                    </strong>
-                  </td>
-                  <td>{player.name}</td>
-                  <td><span className="badge badge-info">{player.sport}</span></td>
-                  <td>{player.rating}</td>
-                  <td>{player.wins}</td>
-                  <td><strong>{player.points}</strong></td>
+          {leaderboardLoading && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+              Loading leaderboard…
+            </p>
+          )}
+          {!leaderboardLoading && leaderboardError && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+              Could not load leaderboard
+            </p>
+          )}
+          {!leaderboardLoading && !leaderboardError && (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Team</th>
+                  <th>Sport</th>
+                  <th>Wins</th>
+                  <th>Points</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {leaderboardData.map((entry) => (
+                  <tr key={entry.teamId}>
+                    <td>
+                      <strong style={{ color: entry.rank <= 3 ? 'var(--warning)' : 'inherit' }}>
+                        {entry.rank <= 3 ? '🥇🥈🥉'[entry.rank - 1] : entry.rank}
+                      </strong>
+                    </td>
+                    <td>{entry.teamName}</td>
+                    <td><span className="badge badge-info">{entry.sport}</span></td>
+                    <td>{entry.wins}</td>
+                    <td><strong>{entry.points}</strong></td>
+                  </tr>
+                ))}
+                {leaderboardData.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      No leaderboard data available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
 
       {activeTab === 'achievements' && (
-        <div className="grid grid-3">
-          {achievements.map((achievement) => (
-            <div key={achievement.id} className="card" style={{ textAlign: 'center', opacity: achievement.earned ? 1 : 0.5 }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>{achievement.icon}</div>
-              <h4 style={{ marginBottom: '0.25rem' }}>{achievement.name}</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{achievement.description}</p>
-              <span className={`badge ${achievement.earned ? 'badge-success' : 'badge-warning'}`} style={{ marginTop: '0.5rem' }}>
-                {achievement.earned ? 'Earned' : 'Locked'}
-              </span>
+        <div>
+          {achievementsLoading && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+              Loading achievements…
+            </p>
+          )}
+          {!achievementsLoading && achievementsError && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+              Could not load achievements
+            </p>
+          )}
+          {!achievementsLoading && !achievementsError && achievementsData.length === 0 && (
+            <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+              No achievements yet
+            </p>
+          )}
+          {!achievementsLoading && !achievementsError && achievementsData.length > 0 && (
+            <div className="grid grid-3">
+              {achievementsData.map((achievement) => {
+                const earned = achievement.value > 0;
+                return (
+                  <div
+                    key={achievement.id}
+                    className="card"
+                    style={{ textAlign: 'center', opacity: earned ? 1 : 0.5 }}
+                  >
+                    <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>
+                      {getIcon(achievement.type)}
+                    </div>
+                    <h4 style={{ marginBottom: '0.25rem', textTransform: 'capitalize' }}>
+                      {achievement.type}
+                    </h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                      {achievement.value}
+                    </p>
+                    <span
+                      className={`badge ${earned ? 'badge-success' : 'badge-warning'}`}
+                      style={{ marginTop: '0.5rem' }}
+                    >
+                      {earned ? 'Earned' : 'Locked'}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

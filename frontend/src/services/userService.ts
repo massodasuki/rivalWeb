@@ -72,6 +72,13 @@ export interface UpdatePasswordData {
   new_password: string;
 }
 
+export interface ActivityEntry {
+  id: number;
+  type: 'match_join' | 'team_join' | 'achievement';
+  message: string;
+  createdAt: string;
+}
+
 // User API functions
 export const userService = {
   // Get all users
@@ -121,6 +128,11 @@ export const userService = {
       return this.getUser(parseInt(userId, 10));
     }
     throw new Error('User not authenticated');
+  },
+
+  // Get user activity feed
+  async getUserActivity(id: number): Promise<ActivityEntry[]> {
+    return get<ActivityEntry[]>(`/api/users/${id}/activity`);
   },
 };
 

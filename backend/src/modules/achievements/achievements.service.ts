@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Achievement } from './entities/achievement.entity';
+import { ActivityLog } from '../users/entities/activity-log.entity';
 
 @Injectable()
 export class AchievementsService {
+  private readonly logger = new Logger(AchievementsService.name);
+
   constructor(
     @InjectRepository(Achievement)
     private achievementsRepository: Repository<Achievement>,
+    @InjectRepository(ActivityLog)
+    private activityLogRepository: Repository<ActivityLog>,
   ) {}
 
   async findAll(): Promise<Achievement[]> {
@@ -23,7 +28,19 @@ export class AchievementsService {
 
   async create(data: Partial<Achievement>): Promise<Achievement> {
     const achievement = this.achievementsRepository.create(data);
-    return this.achievementsRepository.save(achievement);
+    const saved = await this.achievementsRepository.save(achievement);
+
+    try {
+      await this.activityLogRepository.save({
+        user_id: data.user_id,
+        type: 'achievement',
+        message: `Achievement unlocked: ${data.type || 'new achievement'}`,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to insert activity log for achievement create (user=${data.user_id}): ${err}`);
+    }
+
+    return saved;
   }
 
   async updateValue(userId: number, type: string, value: number): Promise<Achievement> {
@@ -39,7 +56,19 @@ export class AchievementsService {
         value,
       });
     }
-    return this.achievementsRepository.save(achievement);
+    const saved = await this.achievementsRepository.save(achievement);
+
+    try {
+      await this.activityLogRepository.save({
+        user_id: userId,
+        type: 'achievement',
+        message: `Achievement unlocked: ${type}`,
+      });
+    } catch (err) {
+      this.logger.error(`Failed to insert activity log for achievement update (user=${userId}, type=${type}): ${err}`);
+    }
+
+    return saved;
   }
 
   async remove(id: number): Promise<void> {
